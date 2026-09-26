@@ -142,4 +142,4 @@ no-bundle Tauri build smoke test. [Watch the gates](.github/workflows).
   ─────────────────────────────────────────
 ```
 
-PanYa is distributed under the MIT License.
+PanYa is distributed under the [MIT License](LICENSE).
