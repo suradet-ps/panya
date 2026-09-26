@@ -155,9 +155,18 @@ Semantic & verdict (status = color + tint background):
 | `--status-ontrack` / `-bg` | `#10b981` / `#ecfdf5` | ตามแผน |
 | `--status-watch` / `-bg` | `#f59e0b` / `#fffbeb` | เฝ้าระวัง |
 | `--status-behind` / `-bg` | `#ff1744` / `#fef2f2` | ล่าช้า |
-| `--status-over` / `-bg` | `#8b5cf6` / `#f5f3ff` | เกินแผน |
+| `--status-over` / `-bg` | `#ff1744` / `#fef2f2` | เกินแผน (red family, like ล่าช้า) |
 | `--status-unplanned` / `-bg` | `#fb923c` / `#fff7ed` | นอกแผน |
 | `--status-nodata` / `-bg` | `#898989` / `#f5f5f5` | ไม่มีข้อมูล |
+
+Two color roles never mix: **brand pink is an action/emphasis color** (CTAs,
+active pills, the featured KPI, the "actual" bars) and is never a verdict.
+The **verdict ramp is semantic, and severity comes first**: green = ตามแผน
+(safe), amber = เฝ้าระวัง (caution), red = off-plan problems - both ล่าช้า
+(under-plan) and เกินแผน (over-plan drains the budget, so it is a problem,
+not a neutral deviation; the Thai label carries the direction), orange =
+นอกแผน (a purchase with no plan line), gray = ไม่มีข้อมูล. The Thai label
+always accompanies the color, so hue is never the only signal.
 
 ### 3.2 Typography
 

@@ -43,7 +43,7 @@
   --status-ontrack: #10b981;
   --status-watch: #f59e0b;
   --status-behind: #ff1744;
-  --status-over: #8b5cf6;
+  --status-over: #ff1744;
   --status-unplanned: #fb923c;
   --status-nodata: #898989;
 
@@ -54,8 +54,8 @@
   --status-watch-bg: #fffbeb;
   --status-behind-text: #b91c1c;
   --status-behind-bg: #fef2f2;
-  --status-over-text: #6d28d9;
-  --status-over-bg: #f5f3ff;
+  --status-over-text: #b91c1c;
+  --status-over-bg: #fef2f2;
   --status-unplanned-text: #c2410c;
   --status-unplanned-bg: #fff7ed;
   --status-nodata-text: #616161;
