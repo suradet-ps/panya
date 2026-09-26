@@ -82,7 +82,9 @@ fn TrackingRowItem(row: TrackingRow, on_select: Callback<String>) -> impl IntoVi
     view! {
         <tr on:click=move |_| on_select.run(click_code.clone())>
             <td class="cell-code">{code}</td>
-            <td class="cell-name">{name}</td>
+            <td class="cell-name">
+                <span class="cell-name-text">{name}</span>
+            </td>
             <td class="cell-money">{format_baht(plan, 0)}</td>
             <td class="cell-money">{format_baht(actual, 0)}</td>
             <td class="cell-pct">{format_pct_opt(achievement)}</td>

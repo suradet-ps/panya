@@ -244,7 +244,7 @@ shadow and badge-based emphasis for the featured KPI card.
 └────────────────────────────────────────────┴────────────────────────────┘
 ```
 
-- **Window:** minimum 1024 × 720, default 1280 × 800. The app is a desktop
+- **Window:** minimum 1000 × 600, default 1200 × 700. The app is a desktop
   tool, not a responsive website - no hamburger, no full-screen sheet.
 - **Top bar:** 48px, flat canvas, hairline bottom border, always visible.
 - **Bands:** KPI strip (padding `--space-md`), filter bar (hairline bottom),
