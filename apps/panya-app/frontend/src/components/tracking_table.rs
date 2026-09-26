@@ -46,7 +46,13 @@ pub fn TrackingTable() -> impl IntoView {
                             </tr>
                         </thead>
                         <tbody>
-                            <For each=move || rows.get() key=|row| row.working_code.clone() let:row>
+                            <For
+                                each=move || rows.get()
+                                key=move |row: &TrackingRow| {
+                                    (row.working_code.clone(), tracking.revision.get_untracked())
+                                }
+                                let:row
+                            >
                                 <TrackingRowItem
                                     row=row
                                     on_select=Callback::new(move |code: String| {

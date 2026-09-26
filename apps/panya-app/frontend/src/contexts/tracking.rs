@@ -68,6 +68,12 @@ pub struct TrackingContext {
     pub years: RwSignal<Vec<i32>>,
     /// The last loaded payload.
     pub data: RwSignal<Option<TrackingResponse>>,
+    /// Monotonic counter bumped on every successful load. The table keys its
+    /// rows by `(working_code, revision)`: Leptos `For` reuses a view whose
+    /// key is unchanged and never re-renders it with the new item, so without
+    /// the revision a year switch would keep the previous year's numbers in
+    /// the rows (the codes are mostly the same).
+    pub revision: RwSignal<u64>,
     /// Whether a load is in flight.
     pub loading: RwSignal<bool>,
     /// Last load error.
@@ -87,6 +93,7 @@ impl TrackingContext {
             search: RwSignal::new(String::new()),
             years: RwSignal::new(Vec::new()),
             data: RwSignal::new(None),
+            revision: RwSignal::new(0),
             loading: RwSignal::new(false),
             error: RwSignal::new(None),
             selected: RwSignal::new(None),
@@ -123,6 +130,10 @@ impl TrackingContext {
                 if data.year == self.year.get_untracked()
                     && data.quarter == self.quarter.get_untracked()
                 {
+                    // Bump before storing: the rebuild is triggered by `data`,
+                    // and the row key must already read the new revision.
+                    self.revision
+                        .update(|revision| *revision = revision.wrapping_add(1));
                     self.data.set(Some(data));
                 }
             }
