@@ -47,9 +47,8 @@
 }
 
 .brand-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-lg);
+  width: 32px;
+  height: 32px;
 }
 
 .brand-text {
@@ -173,20 +172,20 @@
 }
 
 .kpi-card-featured {
-  background: var(--surface-dark);
-  border-color: var(--surface-dark);
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .kpi-card-featured .kpi-label {
-  color: var(--on-dark-soft);
+  color: var(--on-primary);
 }
 
 .kpi-value-featured {
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .kpi-card-featured .kpi-sub {
-  color: var(--on-dark-soft);
+  color: var(--on-primary);
 }
 
 /* ─── Filter bar ───────────────────────────────────────────── */
@@ -226,9 +225,8 @@
 }
 
 .pill-active {
-  background: var(--canvas);
-  color: var(--ink);
-  box-shadow: var(--elevation-soft);
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 .search-box {
@@ -506,7 +504,7 @@
 }
 
 .legend-actual {
-  background: var(--brand-accent);
+  background: var(--primary);
 }
 
 .quarter-row {

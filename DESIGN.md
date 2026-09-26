@@ -102,12 +102,12 @@ CSV of the current table view through the native save dialog. No PDF in v1.
 
 ## 3. Visual Design System
 
-A **modern monochrome SaaS language** rebuilt for a Thai desktop data
-application: white canvas, near-black primary actions, light-gray cards, one
-scarce dark surface, and pastels reserved for badges. Thai UI needs a
-Thai-capable family, so the reference system's display face is substituted
-with **IBM Plex Sans Thai** + **IBM Plex Mono** for codes and numbers, both
-bundled with the app.
+A **pop-neon pink language** rebuilt for a Thai desktop data application,
+matching the app icon (`icon-master.svg`): white canvas, pink primary actions
+with comic-black text, soft pink-tinted cards, and semantic status colors
+reserved for verdicts. Thai UI needs a Thai-capable family, so the reference
+system's display face is substituted with **IBM Plex Sans Thai** + **IBM Plex
+Mono** for codes and numbers, both bundled with the app.
 
 ### 3.1 Color Tokens
 
@@ -115,9 +115,9 @@ Brand & action:
 
 | Token | Value | Role |
 |---|---|---|
-| `--primary` | `#111111` | Primary CTAs, app wordmark, h1/h2 type |
-| `--primary-active` | `#242424` | Pressed state of primary |
-| `--brand-accent` | `#3b82f6` | Inline links, sparse info accent, `เกินแผน` status |
+| `--primary` | `#ff4081` | Primary CTAs, active pills, featured KPI (the app-icon pink) |
+| `--primary-active` | `#e91e63` | Pressed state of primary |
+| `--link` | `#c2185b` | Inline text links (AA on white) |
 | `--badge-orange` | `#fb923c` | Badge pastel, `นอกแผน` status |
 | `--badge-pink` | `#ec4899` | Badge pastel, used sparingly |
 | `--badge-violet` | `#8b5cf6` | Badge pastel, used sparingly |
@@ -128,11 +128,9 @@ Surface:
 | Token | Value | Role |
 |---|---|---|
 | `--canvas` | `#ffffff` | Page floor, cards on tinted layouts |
-| `--surface-soft` | `#f8f9fa` | Nav-pill-group background, hover fills |
-| `--surface-card` | `#f5f5f5` | Light-gray cards, table zebra/selected row |
+| `--surface-soft` | `#fff4f8` | Pink-tinted pill-group background, hover fills |
+| `--surface-card` | `#fdeff5` | Pink-tinted cards, table zebra/selected row |
 | `--surface-strong` | `#e5e7eb` | Chart track, disabled button background |
-| `--surface-dark` | `#101010` | The one featured KPI card |
-| `--surface-dark-elevated` | `#1a1a1a` | Nested blocks inside the dark card |
 | `--hairline` | `#e5e7eb` | 1px borders, table dividers, input outlines |
 | `--hairline-soft` | `#f3f4f6` | Barely-visible divider between sibling bands |
 
@@ -144,8 +142,7 @@ Text:
 | `--body` | `#374151` | Running text |
 | `--muted` | `#6b7280` | Secondary text, column headers, captions |
 | `--muted-soft` | `#898989` | Tertiary text, placeholders, copyright |
-| `--on-primary` / `--on-dark` | `#ffffff` | Text on primary / dark surfaces |
-| `--on-dark-soft` | `#a1a1aa` | Secondary text on the dark card |
+| `--on-primary` | `#111111` | Text on the pink primary/featured surfaces (AA) |
 
 Semantic & verdict (status = color + tint background):
 
@@ -157,7 +154,7 @@ Semantic & verdict (status = color + tint background):
 | `--error` | `#ef4444` | Validation errors |
 | `--status-ontrack` / `-bg` | `#10b981` / `#ecfdf5` | ตามแผน |
 | `--status-watch` / `-bg` | `#f59e0b` / `#fffbeb` | เฝ้าระวัง |
-| `--status-behind` / `-bg` | `#ef4444` / `#fef2f2` | ล่าช้า |
+| `--status-behind` / `-bg` | `#ff1744` / `#fef2f2` | ล่าช้า |
 | `--status-over` / `-bg` | `#3b82f6` / `#eff6ff` | เกินแผน |
 | `--status-unplanned` / `-bg` | `#fb923c` / `#fff7ed` | นอกแผน |
 | `--status-nodata` / `-bg` | `#898989` / `#f5f5f5` | ไม่มีข้อมูล |
@@ -226,8 +223,8 @@ Elevation - soft and modern, no neumorphism, no glassmorphism:
 | Raised | `0 4px 12px rgba(0,0,0,0.08)` | Dropdowns, detail drawer |
 | Overlay | `0 8px 24px rgba(0,0,0,0.18)` | Modal only |
 
-The dark surface (`--surface-dark`) is the emphasis signal - it replaces
-shadow and badge-based emphasis for the featured KPI card.
+The pink primary surface is the emphasis signal - it replaces shadow and
+badge-based emphasis for the featured KPI card.
 
 ### 3.4 Layout
 
@@ -235,11 +232,11 @@ shadow and badge-based emphasis for the featured KPI card.
 ┌──────────────────────────── top bar (48px) ─────────────────────────────┐
 │ แผนยา              ● INVS      [ปีงบประมาณ ▾]              [ตั้งค่า]     │
 ├─────────────────────────────────────────────────────────────────────────┤
-│ KPI: [แผนรวมปี] [ซื้อจริงสะสม] [% ความสำเร็จ ▪dark] [ล่าช้า] [นอกแผน]   │
+│ KPI: [แผนรวมปี] [ซื้อจริงสะสม] [% ความสำเร็จ ▪pink] [ล่าช้า] [นอกแผน]   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ [ ทั้งปี | Q1 | Q2 | Q3 | Q4 ]   [สถานะ ▾]   [ค้นหารหัส/ชื่อยา…]        │
 ├────────────────────────────────────────────┬────────────────────────────┤
-│ tracking table (flex, scrolls)             │ detail panel (420px)       │
+│ tracking table (flex, scrolls)             │ detail panel (360px)       │
 │  … rows …                                  │  plan vs actual / quarter  │
 └────────────────────────────────────────────┴────────────────────────────┘
 ```
@@ -249,38 +246,39 @@ shadow and badge-based emphasis for the featured KPI card.
 - **Top bar:** 48px, flat canvas, hairline bottom border, always visible.
 - **Bands:** KPI strip (padding `--space-md`), filter bar (hairline bottom),
   then the table fills the remaining height and scrolls independently.
-- **Detail drawer:** 420px on the right at ≥1280px width; between
-  1024–1279px it overlays the table (380px) with a soft backdrop.
+- **Detail drawer:** 360px on the right; below 1120px width it narrows to
+  320px so the table keeps room.
 - `prefers-reduced-motion` disables transitions.
 
 ### 3.5 Components
 
 **`top-bar`** - 48px, `--canvas`, hairline bottom. Wordmark "แผนยา" in IBM
-Plex Sans Thai 18px / 600 at left; connection status dot (7px,
+Plex Sans Thai 16px / 600 at left; connection status dot (7px,
 `--success` / `--error`) with a short Thai label; fiscal-year select; icon
 button for settings.
 
 **`nav-pill-group`** - the quarter selector and any grouped sub-nav. Wrapper
-background `--surface-soft`, internal padding 4px, `--radius-pill`. Active
-segment renders as a `--canvas` pill with `--elevation-soft` inside the
+background `--surface-soft`, internal padding 3px, `--radius-pill`. Active
+segment renders as a `--primary` pill with `--on-primary` text inside the
 wrapper - the pill-in-pill treatment is the system's signature interactive
 component.
 
 **`kpi-card`** - `--canvas`, 1px `--hairline`, `--radius-xl`, padding
-`--space-lg`. Caption label in `--muted`, value in `title-lg` (`--ink`,
-mono for amounts), optional delta line in `body-sm`.
+10 × 12px. Caption label in `--muted`, value in `title-lg` (`--ink`, mono for
+amounts), optional delta line in `body-sm`.
 
-**`kpi-card-featured`** - the same geometry with `--surface-dark` background
-and `--on-dark` text (secondary line `--on-dark-soft`). Used exactly once per
-screen: the % ความสำเร็จ card. The dark surface **is** the emphasis - no
-border, no badge, no scale change.
+**`kpi-card-featured`** - the same geometry with `--primary` (app-icon pink)
+background and `--on-primary` (ink) text, echoing the icon's black-on-pink.
+Used exactly once per screen: the % ความสำเร็จ card. The pink surface **is**
+the emphasis - no border, no badge, no scale change.
 
-**`filter-bar`** - hairline bottom, horizontal, gap `--space-sm`: quarter
-`nav-pill-group`, status select, search `text-input` growing to the right.
+**`filter-bar`** - hairline bottom, horizontal, gap `--space-xs`: quarter
+`nav-pill-group`, status `nav-pill-group`, search `text-input` growing to the
+right.
 
 **`text-input` / `select`** - `--canvas`, `--ink`, `body-md`, `--radius-md`,
-height 34px, padding 8 × 12, 1px `--hairline`. Focus: border `--ink` plus a
-2px `--primary` ring with a 3px `rgba(17,17,17,0.12)` halo.
+height 34px, padding 8 × 12, 1px `--hairline`. Focus: border `--ink` plus the
+shared 2px `--primary` focus ring.
 
 **`button-primary`** - `--primary` background, `--on-primary` text,
 `typography.button`, height 34px, padding 8 × 14, `--radius-md`. Pressed:
@@ -330,12 +328,12 @@ typed password buffers zeroized on close.
 
 **Do**
 
-- Reserve `--primary` (#111111) for primary CTAs and headlines. The action
-  layer is monochrome.
+- Reserve `--primary` (#ff4081) for primary CTAs, active pills, and the
+  featured KPI. The action layer is pink; text on it is comic-black (AA).
 - Use semantic/status colors only for verdicts and alerts - never on
   buttons.
-- Use the dark surface exactly once per screen (featured KPI). Scarcity is
-  the signal.
+- Use the pink featured surface exactly once per screen (featured KPI).
+  Scarcity is the signal.
 - Keep amounts and codes in `--font-mono`, right-aligned.
 - Show "ไม่มีข้อมูล" / "นอกแผน" as first-class states.
 - Keep pills for grouped tabs and badges - the pill-in-pill pattern is the
@@ -343,10 +341,10 @@ typed password buffers zeroized on close.
 
 **Don't**
 
-- Don't use `--brand-accent` or badge pastels on primary CTAs.
+- Don't use badge pastels or status colors on primary CTAs.
 - Don't exceed weight 600 in display type.
 - Don't use radius above `--radius-xl` (12px) on cards.
-- Don't put the dark surface anywhere except the featured KPI card.
+- Don't put the pink primary surface anywhere except the featured KPI card.
 - Don't repeat the same surface mode in two consecutive bands.
 - Don't fetch fonts, icons, or any asset from a CDN - offline-first is a law.
 - Don't add hover-only information; the documented states are default,
@@ -354,8 +352,8 @@ typed password buffers zeroized on close.
 
 ### 3.7 Accessibility
 
-- Visible focus ring on every interactive element (2px `--primary` + 3px
-  halo).
+- Visible focus ring on every interactive element (2px `--primary` offset
+  ring).
 - WCAG AA contrast: status text on its tint, `--warning-text` (#92400e) on
   `--status-watch-bg`.
 - Row keyboard support: Tab into the table, arrows move, Enter opens the
@@ -394,7 +392,7 @@ typed password buffers zeroized on close.
    document hover as a state.
 3. Use tokens everywhere; never inline a hex value in component code.
 4. When emphasis is needed: larger display type before bolder display type;
-   the dark surface before any accent color.
+   the pink featured surface before any accent color.
 5. The trinity does not blur: display = 600 with tracking, body = 400, mono =
    codes and amounts.
 

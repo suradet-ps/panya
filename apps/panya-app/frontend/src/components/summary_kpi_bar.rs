@@ -1,7 +1,7 @@
 //! The KPI strip: plan, actual purchases, achievement, and alert counts.
 //!
 //! All values come from the tracking payload; the `% ความสำเร็จ` card is the
-//! featured (dark-surface) card - the system's single emphasis signal.
+//! featured (pink) card - the system's single emphasis signal.
 
 use leptos::prelude::*;
 
