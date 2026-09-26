@@ -1,0 +1,144 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-check:
+    name: Rust Format, Clippy & Test (root workspace)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install system dependencies (Tauri on Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Create dist placeholder (required by tauri::generate_context!)
+        run: mkdir -p apps/panya-app/frontend/dist && touch apps/panya-app/frontend/dist/index.html
+
+      - name: Install Rust stable
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          rustup default stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: ". -> target"
+
+      - name: Cargo format check
+        run: cargo fmt --all -- --check
+
+      - name: Cargo clippy (deny warnings)
+        # `panya-frontend` only builds for wasm32; it is linted in the
+        # wasm-frontend job below.
+        run: cargo clippy --workspace --exclude panya-frontend --all-targets -- -D warnings
+
+      - name: Cargo test (backend packages)
+        run: cargo test -p panya-core -p panya-invs -p panya
+
+      - name: Cargo doc (deny warnings)
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: cargo doc --workspace --exclude panya-frontend --no-deps
+
+  wasm-frontend:
+    name: WASM Frontend (apps/panya-app/frontend)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Rust stable (wasm target)
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt --target wasm32-unknown-unknown
+          rustup default stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: ". -> target"
+
+      - name: Cargo format check (root workspace)
+        run: cargo fmt --all -- --check
+
+      - name: Cargo clippy (wasm32, deny warnings)
+        run: cargo clippy -p panya-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings
+
+      - name: Install Trunk
+        run: |
+          # GitHub release downloads occasionally drop the connection;
+          # retry before giving up.
+          for attempt in 1 2 3 4; do
+            curl -LsSf https://github.com/trunk-rs/trunk/releases/download/v0.21.14/trunk-x86_64-unknown-linux-gnu.tar.gz -o trunk.tar.gz \
+              && tar -xzf trunk.tar.gz \
+              && sudo mv trunk /usr/local/bin/ \
+              && break
+            echo "trunk download failed (attempt $attempt/4) - retrying in 10s"
+            sleep 10
+          done
+          test -x /usr/local/bin/trunk
+
+      - name: Build frontend (trunk)
+        working-directory: apps/panya-app
+        run: |
+          # trunk downloads the matching wasm-bindgen CLI from GitHub
+          # releases, which occasionally flakes mid-connection - retry the
+          # whole build (cached artifacts make retries cheap).
+          for attempt in 1 2 3 4; do
+            trunk build frontend/index.html --release && exit 0
+            echo "trunk build failed (attempt $attempt/4) - retrying in 10s"
+            sleep 10
+          done
+          exit 1
+
+  cargo-deny:
+    name: Cargo Deny
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check all
+          manifest-path: Cargo.toml
+
+  agentforge:
+    name: AGENTS-RUST Constitution
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Rust stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Install cargo-agentforge
+        run: cargo install --git https://github.com/suradet-ps/agentforge-rs cargo-agentforge --locked
+
+      - name: Validate the constitution
+        run: cargo agentforge validate
+
+      - name: Check the constitution is current
+        run: cargo agentforge check

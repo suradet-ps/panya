@@ -1,0 +1,125 @@
+name: "Publish Release"
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cargo-audit:
+    name: Cargo Audit
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Rust stable
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Audit dependency advisories
+        # cargo-deny covers advisories on every PR; this is the loud,
+        # dedicated audit on the release path.
+        run: cargo audit
+
+  publish-tauri:
+    name: Publish Tauri (${{ matrix.platform }})
+    permissions:
+      contents: write # tauri-action creates/updates the GitHub release for the pushed tag
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows Build (binary ships as a .zip containing trunk.exe)
+          - platform: "windows-latest"
+            args: ""
+            trunk-artifact: "trunk-x86_64-pc-windows-msvc.zip"
+          # Linux Build
+          - platform: "ubuntu-24.04"
+            args: ""
+            trunk-artifact: "trunk-x86_64-unknown-linux-gnu.tar.gz"
+          # macOS Build (Apple Silicon)
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+            trunk-artifact: "trunk-aarch64-apple-darwin.tar.gz"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Rust stable (wasm target)
+        run: |
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          rustup default stable
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install Trunk
+        shell: bash
+        env:
+          # Passed through the environment (never interpolated into the
+          # script) so a matrix change can never inject shell code.
+          TRUNK_ARTIFACT: ${{ matrix.trunk-artifact }}
+        run: |
+          # GitHub release downloads occasionally drop the connection;
+          # retry before giving up. Windows ships trunk as a .zip
+          # (trunk.exe at the archive root); every other target is .tar.gz.
+          # Expand-Archive keys off the file extension, so use a .zip name
+          # on Windows.
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            CURL=curl.exe; ARCHIVE=trunk.zip
+          else
+            CURL=curl; ARCHIVE=trunk.tar.gz
+          fi
+          for attempt in 1 2 3 4; do
+            $CURL -LsSf "https://github.com/trunk-rs/trunk/releases/download/v0.21.14/$TRUNK_ARTIFACT" -o "$ARCHIVE" \
+              && mkdir -p "$HOME/.cargo/bin" \
+              && if [ "$RUNNER_OS" = "Windows" ]; then
+                   powershell -Command "Expand-Archive -Force -Path trunk.zip -DestinationPath trunk-extract"
+                   cp trunk-extract/trunk.exe "$HOME/.cargo/bin/"
+                 else
+                   tar -xzf "$ARCHIVE" -C "$HOME/.cargo/bin"
+                 fi \
+              && break
+            echo "trunk download failed (attempt $attempt/4) - retrying in 10s"
+            sleep 10
+          done
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            test -x "$HOME/.cargo/bin/trunk.exe"
+          else
+            test -x "$HOME/.cargo/bin/trunk"
+          fi
+
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/panya-app
+          tagName: v__VERSION__
+          releaseName: "PanYa v__VERSION__"
+          releaseBody: "See the assets to download this version and install."
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
