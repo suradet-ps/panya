@@ -1,6 +1,7 @@
-//! App header: brand, connection badge, fiscal-year selector, settings.
+//! App header: brand, connection badge, fiscal-year selector, refresh, settings.
 
 use leptos::prelude::*;
+use leptos::task::spawn_local;
 use wasm_bindgen::JsCast;
 use web_sys::{Event, HtmlSelectElement};
 
@@ -50,8 +51,10 @@ pub fn AppHeader(on_open_settings: Callback<()>) -> impl IntoView {
             </div>
 
             <div class="header-controls">
-                <div class="year-selector">
-                    <label>"ปีงบประมาณ"</label>
+                // The whole label is the hit target: clicking the text opens
+                // the select, not just the 32px control itself.
+                <label class="year-selector">
+                    <span class="year-label">"ปีงบประมาณ"</span>
                     <select
                         prop:value=move || tracking.year.get().to_string()
                         on:change=on_year_change
@@ -60,7 +63,7 @@ pub fn AppHeader(on_open_settings: Callback<()>) -> impl IntoView {
                             <option value=year.to_string()>{year}</option>
                         </For>
                     </select>
-                </div>
+                </label>
 
                 <span
                     class="badge"
@@ -74,6 +77,22 @@ pub fn AppHeader(on_open_settings: Callback<()>) -> impl IntoView {
                     />
                     {status_label}
                 </span>
+
+                <button
+                    class="btn btn-icon"
+                    title="โหลดข้อมูลใหม่"
+                    aria-label="โหลดข้อมูลใหม่"
+                    disabled=move || db.connecting.get() || tracking.loading.get()
+                    on:click=move |_| {
+                        spawn_local(async move {
+                            tracking.load().await;
+                        });
+                    }
+                >
+                    <span class:spin=move || tracking.loading_visible.get()>
+                        <Icon kind=IconKind::RefreshCw size=14 />
+                    </span>
+                </button>
 
                 <button class="btn btn-ghost settings-btn" on:click=move |_| on_open_settings.run(())>
                     <Icon kind=IconKind::Settings size=14 />

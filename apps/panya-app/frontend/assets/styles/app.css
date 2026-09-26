@@ -79,15 +79,16 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+  cursor: pointer;
 }
 
-.year-selector label {
+.year-label {
   font-size: 12px;
   color: var(--muted);
 }
 
 .year-selector select {
-  height: 30px;
+  height: 32px;
   padding: 0 var(--space-xs);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
@@ -210,14 +211,24 @@
 .pill {
   border: none;
   background: transparent;
-  padding: 4px 10px;
+  padding: 5px 12px;
+  min-height: 28px;
   border-radius: var(--radius-pill);
   font-family: var(--font-ui);
   font-size: 12.5px;
   font-weight: 500;
   color: var(--muted);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+/* Press feedback: every registered click is visible. */
+.pill:active {
+  transform: scale(0.96);
 }
 
 .pill:hover {
@@ -642,6 +653,174 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--space-xs);
+}
+
+/* ─── Interaction states ───────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  display: inline-flex;
+  animation: spin 1s linear infinite;
+}
+
+.modal-status {
+  color: var(--muted-soft);
+}
+
+/* Sliding 3px bar on the table card while a refresh is in flight. */
+.table-card {
+  position: relative;
+}
+
+.loadbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.loadbar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  animation: loadbar-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes loadbar-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Previous payload stays readable while the new one loads. */
+.table-scroll--stale {
+  opacity: 0.5;
+  transition: opacity var(--transition-med);
+}
+
+/* First-load skeleton: the table's own geometry, shimmering. */
+.table-skeleton {
+  flex: 1;
+  overflow: hidden;
+}
+
+.skeleton-line {
+  display: block;
+  height: 10px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--surface-card) 25%,
+    var(--surface-soft) 50%,
+    var(--surface-card) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Deliberate empty states: icon + reason + next action. */
+.table-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xl);
+  color: var(--muted-soft);
+  text-align: center;
+}
+
+.table-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--body);
+}
+
+.table-empty-sub {
+  font-size: 12.5px;
+  color: var(--muted-soft);
+}
+
+.table-empty .btn {
+  margin-top: var(--space-xs);
+}
+
+/* Sortable headers. */
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.th-sort:hover {
+  color: var(--ink);
+}
+
+.tracking-table thead th.cell-money .th-sort,
+.tracking-table thead th.cell-pct .th-sort {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.th-sort-icon {
+  font-size: 9px;
+  color: var(--muted-soft);
+}
+
+.th-sort-active {
+  color: var(--ink);
+}
+
+.th-sort-active .th-sort-icon {
+  color: var(--primary);
+}
+
+/* The roving tab stop on the table rows. */
+.tracking-table tbody tr:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+  background: var(--surface-soft);
 }
 
 /* ─── Narrow window ────────────────────────────────────────── */

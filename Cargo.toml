@@ -53,12 +53,17 @@ console_error_panic_hook = "0.1"
 
 [profile.dev]
 incremental = true
+# The Leptos frontend runs as wasm inside the WebView: an unoptimized debug
+# build makes every reactive update (a quarter click, a render batch) stutter
+# visibly. opt-level 2 keeps dev builds fast enough to feel native while
+# incremental compilation keeps the edit-build loop short.
+opt-level = 2
 
-# Shared release profile: panic=abort + codegen-units=1 + LTO keep the wasm
-# bundle and the desktop binary small.
+# Release profile: panic=abort + codegen-units=1 + LTO. opt-level 3 because
+# runtime smoothness matters more than a few MB of desktop binary size.
 [profile.release]
 panic = "abort"
 codegen-units = 1
 lto = true
-opt-level = "z"
+opt-level = 3
 strip = true

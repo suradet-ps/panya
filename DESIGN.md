@@ -329,9 +329,13 @@ code (mono) + `status-badge`; body: the quarter chart, a numbers list
 **`empty-state`** - centered `--muted-soft` icon + one Thai sentence. A drug
 with no data must be visible, not absent.
 
-**`settings-modal`** - centered, max-width 460px, `--elevation-overlay`,
-backdrop `rgba(17,17,17,0.4)`. INVS connection section with Test/Save;
-typed password buffers zeroized on close.
+**`settings-modal`** - centered, max-width 440px, `--elevation-overlay`,
+backdrop `rgba(17,17,17,0.4)`, `role="dialog"` with Escape and backdrop
+close, autofocus on the first field. Test validates and connects, reporting
+the round-trip latency; Save validates, connects, then persists the settings
+encrypted. Errors render in a red panel (`role="alert"`), success in a green
+panel (`role="status"`). The password lives in memory for the session only
+(the health poll reconnects with it); nothing plaintext is ever written.
 
 ### 3.6 Do's and Don'ts
 
@@ -371,6 +375,31 @@ typed password buffers zeroized on close.
   the Thai verdict word always accompanies the color.
 - Reduced-motion support; checks for the connection poll use the same
   timing discipline as `balance` (banner on loss, app keeps composure).
+
+### 3.8 Interaction states
+
+Every state is deliberate - no blank rectangles:
+
+| State | Presentation |
+|---|---|
+| First load (no payload) | Skeleton rows in the table's own geometry, `aria-busy="true"`, plus a text hint in the filter bar - shown only after a 300 ms delay |
+| Refresh (payload present) | 3px sliding `loadbar` on the table card; the previous payload stays visible at 50% opacity, never blanked |
+| Empty - not connected | PlugZap icon, "ยังไม่ได้เชื่อมต่อฐานข้อมูล INVS", primary action opens settings |
+| Empty - no plan data | Inbox icon, "ไม่พบแผนจัดซื้อในปีงบประมาณนี้" and where to check |
+| Empty - filtered away | Search icon, "ไม่พบรายการที่ตรงกับตัวกรอง", secondary action clears the filters |
+| Error | Persistent banner (`role="alert"`) with a "ลองใหม่" retry while connected, plus dismiss |
+| Async narration | A visually hidden `role="status"` region announces loading and the loaded row count |
+
+Interaction contract: sortable headers are real buttons with `aria-sort` on
+the `th`; table rows form one roving tab stop (Arrow keys move, Enter/Space
+opens the drawer, Escape closes it); the search box is debounced 250 ms; the
+result count and load time sit beside the filters.
+
+Timing discipline: **loading indicators appear only after a 300 ms delay** -
+a load that finishes sooner shows nothing at all, because a skeleton that
+flashes for 100 ms reads as jank, not as feedback. Lists above 300 rows
+stream in 150-row batches on the first paint; smaller lists render in one
+pass so they never appear to trickle in.
 
 ---
 

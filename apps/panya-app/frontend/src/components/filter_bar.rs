@@ -1,4 +1,4 @@
-//! Filter bar: quarter scope, status filter, and search.
+//! Filter bar: quarter scope, status filter, search, and the result count.
 
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
@@ -17,7 +17,7 @@ pub fn FilterBar() -> impl IntoView {
             return;
         };
         if let Ok(input) = target.dyn_into::<HtmlInputElement>() {
-            tracking.search.set(input.value());
+            tracking.search_input.set(input.value());
         }
     };
 
@@ -26,6 +26,7 @@ pub fn FilterBar() -> impl IntoView {
             <div class="pill-group" role="group" aria-label="ช่วงไตรมาส">
                 <For each=|| [0u8, 1, 2, 3, 4] key=|q| *q let:q>
                     <button
+                        type="button"
                         class="pill"
                         class:pill-active=move || tracking.quarter.get() == q
                         title=panya_core::fiscal::quarter_label(q)
@@ -42,6 +43,7 @@ pub fn FilterBar() -> impl IntoView {
             <div class="pill-group pill-group--muted" role="group" aria-label="สถานะ">
                 <For each=|| StatusFilter::OPTIONS key=|f| f.key() let:filter>
                     <button
+                        type="button"
                         class="pill"
                         class:pill-active=move || tracking.status_filter.get() == filter
                         on:click=move |_| tracking.status_filter.set(filter)
@@ -51,17 +53,20 @@ pub fn FilterBar() -> impl IntoView {
                 </For>
             </div>
 
-            <Show when=move || tracking.loading.get()>
+            <Show when=move || tracking.loading_visible.get()>
                 <span class="loading-hint">"กำลังโหลด…"</span>
             </Show>
 
-            <Show when=move || !tracking.loading.get() && tracking.data.with(|data| data.is_some())>
+            <Show when=move || {
+                !tracking.loading_visible.get() && tracking.data.with(|data| data.is_some())
+            }>
                 <span class="loading-hint">
                     {move || {
+                        let count = tracking.visible.with(Vec::len);
                         tracking
                             .data
                             .with(|data| {
-                                data.as_ref().map(|d| format!("โหลด {} ms", d.elapsed_ms))
+                                data.as_ref().map(|d| format!("{count} รายการ · โหลด {} ms", d.elapsed_ms))
                             })
                             .unwrap_or_default()
                     }}
@@ -74,7 +79,7 @@ pub fn FilterBar() -> impl IntoView {
                     class="input search-input"
                     type="search"
                     placeholder="ค้นหารหัสยา / ชื่อยา…"
-                    prop:value=move || tracking.search.get()
+                    prop:value=move || tracking.search_input.get()
                     on:input=on_search
                 />
             </div>

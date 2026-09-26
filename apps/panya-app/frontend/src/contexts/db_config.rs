@@ -1,9 +1,9 @@
 //! INVS connection state and actions.
 //!
 //! Owns the editable connection settings, the connection state (connected /
-//! connecting / lost), the save feedback, and the background health poll.
-//! All backend communication goes through [`crate::services`]; this module
-//! never touches `invoke` directly.
+//! connecting / lost), the save feedback, the settings-modal visibility, and
+//! the background health poll. All backend communication goes through
+//! [`crate::services`]; this module never touches `invoke` directly.
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -30,6 +30,11 @@ pub struct DbConfigContext {
     pub saving: RwSignal<bool>,
     /// Save feedback message, auto-cleared.
     pub save_message: RwSignal<Option<String>>,
+    /// Round-trip time of the last successful connect, in milliseconds.
+    pub latency_ms: RwSignal<Option<u64>>,
+    /// Whether the settings modal is open. Shared state so the empty states
+    /// can offer a "open settings" action.
+    pub settings_open: RwSignal<bool>,
     /// Whether the health-poll loop is running (guards double-start).
     polling: RwSignal<bool>,
     /// Whether a poll tick is still in flight.
@@ -50,12 +55,31 @@ impl DbConfigContext {
             lost: RwSignal::new(false),
             saving: RwSignal::new(false),
             save_message: RwSignal::new(None),
+            latency_ms: RwSignal::new(None),
+            settings_open: RwSignal::new(false),
             polling: RwSignal::new(false),
             tick_running: RwSignal::new(false),
             ever_connected: RwSignal::new(false),
         };
         provide_context(ctx);
         ctx
+    }
+
+    /// Validate the editable fields; returns a Thai message on the first
+    /// problem found.
+    #[must_use]
+    pub fn validate(self) -> Option<String> {
+        let cfg = self.config.get_untracked();
+        if cfg.host.trim().is_empty()
+            || cfg.database.trim().is_empty()
+            || cfg.user.trim().is_empty()
+        {
+            return Some("กรอก Host, Database และ User ให้ครบ".to_string());
+        }
+        if cfg.port.trim().parse::<u16>().is_err() {
+            return Some("พอร์ตไม่ถูกต้อง".to_string());
+        }
+        None
     }
 
     /// Load the persisted settings and auto-connect when they exist.
@@ -73,14 +97,21 @@ impl DbConfigContext {
 
     /// Test the connection with the current settings, storing the outcome.
     pub async fn connect(self) -> bool {
+        if let Some(message) = self.validate() {
+            self.error.set(Some(message));
+            self.latency_ms.set(None);
+            return false;
+        }
         self.connecting.set(true);
         self.error.set(None);
+        self.latency_ms.set(None);
         let cfg = self.config.get_untracked();
         let ok = match commands::invs_connect(&cfg).await {
-            Ok(()) => {
+            Ok(latency_ms) => {
                 self.ever_connected.set(true);
                 self.lost.set(false);
                 self.connected.set(true);
+                self.latency_ms.set(Some(latency_ms));
                 true
             }
             Err(e) => {
@@ -93,14 +124,24 @@ impl DbConfigContext {
         ok
     }
 
-    /// Persist the current settings (encrypted by the backend).
-    pub async fn save(self) -> bool {
+    /// The Save ceremony: validate, connect (if not already connected), then
+    /// persist the settings encrypted.
+    pub async fn save_and_connect(self) -> bool {
+        if let Some(message) = self.validate() {
+            self.error.set(Some(message));
+            self.save_message.set(None);
+            return false;
+        }
+        if !self.connected.get_untracked() && !self.connect().await {
+            return false;
+        }
         self.saving.set(true);
         self.save_message.set(None);
         let cfg = self.config.get_untracked();
         let ok = match commands::save_settings(Some(&cfg)).await {
             Ok(()) => {
-                self.save_message.set(Some("บันทึกการตั้งค่าสำเร็จ".to_string()));
+                self.save_message
+                    .set(Some("บันทึกการตั้งค่าและเชื่อมต่อแล้ว".to_string()));
                 true
             }
             Err(e) => {
@@ -109,7 +150,7 @@ impl DbConfigContext {
             }
         };
         self.saving.set(false);
-        set_timeout_ms(move || self.save_message.set(None), 4_000);
+        set_timeout_ms(move || self.save_message.set(None), 5_000);
         ok
     }
 

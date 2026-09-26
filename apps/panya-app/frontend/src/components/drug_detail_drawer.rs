@@ -1,10 +1,12 @@
 //! The drug detail drawer: scoped numbers plus the quarter breakdown.
 
+use leptos::ev;
 use leptos::prelude::*;
 use panya_core::fiscal::quarter_label;
 
 use crate::components::icons::{Icon, IconKind};
 use crate::components::status_badge::StatusBadge;
+use crate::contexts::db_config::DbConfigContext;
 use crate::contexts::tracking::TrackingContext;
 use crate::models::{format_baht, format_pct_opt};
 
@@ -12,9 +14,21 @@ use crate::models::{format_baht, format_pct_opt};
 #[component]
 pub fn DrugDetailDrawer() -> impl IntoView {
     let tracking = expect_context::<TrackingContext>();
+    let db = expect_context::<DbConfigContext>();
     let selected = tracking.selected_row();
 
     let close = move |_| tracking.selected.set(None);
+
+    // Escape closes the drawer, unless the settings modal owns the key.
+    let escape_handle = window_event_listener(ev::keydown, move |ev| {
+        if ev.key() == "Escape"
+            && !db.settings_open.get_untracked()
+            && tracking.selected.get_untracked().is_some()
+        {
+            tracking.selected.set(None);
+        }
+    });
+    let _escape_handle = StoredValue::new(escape_handle);
 
     view! {
         <Show when=move || selected.get().is_some()>

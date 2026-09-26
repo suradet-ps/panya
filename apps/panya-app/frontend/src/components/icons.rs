@@ -15,7 +15,9 @@ enum Shape {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IconKind {
     AlertTriangle,
+    Inbox,
     PlugZap,
+    RefreshCw,
     Save,
     Search,
     Settings,
@@ -31,9 +33,21 @@ fn shapes(kind: IconKind) -> &'static [Shape] {
             Shape::Path("M12 9v4"),
             Shape::Path("M12 17h.01"),
         ],
+        IconKind::Inbox => &[
+            Shape::Path("M22 12h-6l-2 3h-4l-2-3H2"),
+            Shape::Path(
+                "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
+            ),
+        ],
         IconKind::PlugZap => &[
             Shape::Path("M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18"),
             Shape::Path("M13.5 2.5 4 12h6l-1.5 8 9.5-9.5H12l1.5-8z"),
+        ],
+        IconKind::RefreshCw => &[
+            Shape::Path("M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"),
+            Shape::Path("M21 3v5h-5"),
+            Shape::Path("M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"),
+            Shape::Path("M8 16H3v5"),
         ],
         IconKind::Save => &[
             Shape::Path(

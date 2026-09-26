@@ -38,15 +38,18 @@ impl Default for InvsDbState {
 /// Thai message used when no connection has been established yet.
 const NOT_CONNECTED: &str = "ยังไม่ได้เชื่อมต่อฐานข้อมูล INVS";
 
-/// Connect to INVS and keep the client for the session.
+/// Connect to INVS and keep the client for the session. Returns the
+/// round-trip time in milliseconds so the settings modal can show it.
 #[tauri::command]
-pub async fn invs_connect(cfg: InvsDbConfig, state: State<'_, InvsDbState>) -> Result<(), String> {
+pub async fn invs_connect(cfg: InvsDbConfig, state: State<'_, InvsDbState>) -> Result<u64, String> {
+    let started = std::time::Instant::now();
     let client = panya_invs::connect(&cfg)
         .await
         .map_err(|e| format!("เชื่อมต่อ INVS ไม่สำเร็จ: {e}"))?;
+    let latency_ms = started.elapsed().as_millis() as u64;
     let mut guard = state.0.lock().await;
     *guard = Some(client);
-    Ok(())
+    Ok(latency_ms)
 }
 
 /// Cheap round-trip for the connection-health poll.

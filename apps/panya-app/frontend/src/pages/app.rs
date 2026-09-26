@@ -27,7 +27,6 @@ use crate::models::current_fiscal_year;
 pub fn App() -> impl IntoView {
     let db = DbConfigContext::provide();
     let tracking = TrackingContext::provide();
-    let show_settings = RwSignal::new(false);
 
     // Boot: load persisted settings (auto-connects) and start the health-poll
     // loop. The connection watcher below owns the year list and the first
@@ -36,9 +35,11 @@ pub fn App() -> impl IntoView {
     let root_ref = NodeRef::<Div>::new();
     root_ref.on_load(move |_| {
         spawn_local(async move {
+            // The window starts hidden; reveal it now that the shell is up.
+            let _ = crate::services::commands::show_main_window().await;
             db.init_from_storage().await;
             if !db.connected.get_untracked() {
-                show_settings.set(true);
+                db.settings_open.set(true);
             }
             db.start_health_polling(15_000);
         });
@@ -85,15 +86,31 @@ pub fn App() -> impl IntoView {
         });
     };
 
+    let retry_load = move |_| {
+        spawn_local(async move {
+            tracking.load().await;
+        });
+    };
+
     view! {
         <div class="app-shell" node_ref=root_ref>
-            <AppHeader on_open_settings=Callback::new(move |_| show_settings.set(true)) />
+            <AppHeader on_open_settings=Callback::new(move |_| db.settings_open.set(true)) />
 
             <Show when=move || tracking.error.get().is_some()>
-                <div class="error-banner">
+                <div class="error-banner" role="alert">
                     <Icon kind=IconKind::AlertTriangle size=14 />
                     <span>{move || tracking.error.get().unwrap_or_default()}</span>
-                    <button class="btn-dismiss" on:click=move |_| tracking.error.set(None)>
+                    <Show when=move || db.connected.get()>
+                        <button class="btn btn-ghost" on:click=retry_load>
+                            "ลองใหม่"
+                        </button>
+                    </Show>
+                    <button
+                        class="btn-dismiss"
+                        title="ปิดข้อความ"
+                        aria-label="ปิดข้อความ"
+                        on:click=move |_| tracking.error.set(None)
+                    >
                         <Icon kind=IconKind::X size=12 />
                     </button>
                 </div>
@@ -113,7 +130,7 @@ pub fn App() -> impl IntoView {
                 <div class="no-conn-banner">
                     <Icon kind=IconKind::PlugZap size=14 />
                     "ยังไม่ได้เชื่อมต่อฐานข้อมูล INVS -"
-                    <button class="link-btn" on:click=move |_| show_settings.set(true)>
+                    <button class="link-btn" on:click=move |_| db.settings_open.set(true)>
                         "คลิกเพื่อตั้งค่าการเชื่อมต่อ"
                     </button>
                 </div>
@@ -129,9 +146,22 @@ pub fn App() -> impl IntoView {
             </main>
 
             <ConnectionSettings
-                visible=show_settings
-                on_close=Callback::new(move |_| show_settings.set(false))
+                visible=db.settings_open
+                on_close=Callback::new(move |_| db.settings_open.set(false))
             />
+
+            // Screen-reader narration for the async states (WCAG 4.1.3).
+            <div class="sr-only" role="status" aria-live="polite">
+                {move || {
+                    if tracking.loading_visible.get() {
+                        "กำลังโหลดข้อมูล".to_string()
+                    } else if tracking.data.with(|data| data.is_some()) {
+                        format!("โหลดข้อมูลแล้ว {} รายการ", tracking.visible.with(Vec::len))
+                    } else {
+                        String::new()
+                    }
+                }}
+            </div>
         </div>
     }
 }

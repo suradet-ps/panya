@@ -14,6 +14,14 @@ fn arg<T: Serialize>(value: &T) -> JsValue {
     serde_wasm_bindgen::to_value(value).unwrap_or(JsValue::UNDEFINED)
 }
 
+/// Reveal the main window once the UI has mounted (the window starts hidden
+/// so the user never sees a white WebView flash).
+pub async fn show_main_window() -> Result<(), BackendError> {
+    invoke::<()>("show_main_window", &JsValue::NULL)
+        .await
+        .map_err(BackendError::from_js)
+}
+
 /// Persist the INVS connection settings (encrypted by the backend).
 pub async fn save_settings(invs: Option<&InvsDbConfig>) -> Result<(), BackendError> {
     let args = build_args(&[("invs", &arg(&invs))]);
@@ -30,9 +38,10 @@ pub async fn load_settings() -> Result<SettingsFile, BackendError> {
 }
 
 /// Test the INVS connection with `cfg`; on success the backend keeps it.
-pub async fn invs_connect(cfg: &InvsDbConfig) -> Result<(), BackendError> {
+/// Returns the round-trip time in milliseconds.
+pub async fn invs_connect(cfg: &InvsDbConfig) -> Result<u64, BackendError> {
     let args = build_args(&[("cfg", &arg(cfg))]);
-    invoke::<()>("invs_connect", &args)
+    invoke::<u64>("invs_connect", &args)
         .await
         .map_err(BackendError::from_js)
 }
