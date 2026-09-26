@@ -1,0 +1,64 @@
+# Workspace root for the PanYa application.
+#
+# - `crates/panya-core`  - pure domain logic (fiscal quarters, tracking engine).
+# - `crates/panya-invs`  - INVS (SQL Server) connection and read-only queries.
+# - `apps/panya-app`     - the Tauri 2 desktop shell (host target).
+# - `apps/panya-app/frontend` - the Leptos 0.8 CSR frontend, compiled to
+#   `wasm32-unknown-unknown` only.
+#
+# `default-members` is set to the desktop app so a plain `cargo build` /
+# `cargo check` at the repository root builds the application, not the wasm
+# frontend (which cannot compile for the host target).
+[workspace]
+resolver = "2"
+members = [
+    "crates/panya-core",
+    "crates/panya-invs",
+    "apps/panya-app",
+    "apps/panya-app/frontend",
+]
+default-members = ["apps/panya-app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+authors = ["suradet-ps"]
+
+[workspace.dependencies]
+panya-core = { path = "crates/panya-core" }
+panya-invs = { path = "crates/panya-invs" }
+
+serde = { version = "1", features = ["derive"] }        # serialization across the IPC boundary
+serde_json = "1"                                        # JSON payloads for Tauri IPC
+thiserror = "2"                                         # structured errors in library crates
+# SQL Server (INVS), read-only
+tiberius = { version = "0.13", default-features = false, features = ["tokio", "rustls", "sql-browser-tokio"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "net", "sync"] }
+tokio-util = { version = "0.7", features = ["compat"] } # tiberius <-> tokio stream compat
+futures = "0.3"
+# Settings encryption (AES-256-GCM, master key in the OS keychain)
+encryptman-keyring = "0.1"
+# Desktop shell
+tauri = { version = "2", features = [] }
+tauri-build = "2"
+# Leptos CSR frontend
+leptos = "0.8"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = "0.3"
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+
+[profile.dev]
+incremental = true
+
+# Shared release profile: panic=abort + codegen-units=1 + LTO keep the wasm
+# bundle and the desktop binary small.
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "z"
+strip = true

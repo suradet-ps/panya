@@ -1,0 +1,18 @@
+# Trunk config for the PanYa frontend.
+# Tauri's beforeDevCommand/beforeBuildCommand run with cwd = this directory
+# (see tauri.conf.json), so paths are relative to this file.
+[build]
+target = "frontend/index.html"
+dist = "frontend/dist"
+# Keep the public URL relative so the app works when loaded from `file://`
+# bundles produced by Tauri.
+public_url = "/"
+# Disable Subresource Integrity (SRI) hashes on the injected <link>/<script>
+# tags: Tauri's webview cannot reliably honour `integrity` when assets are
+# served through the `tauri://` custom protocol, which would silently drop
+# the stylesheets and leave the app unstyled.
+no_sri = true
+
+[serve]
+address = "127.0.0.1"
+port = 1420

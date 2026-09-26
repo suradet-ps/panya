@@ -1,0 +1,16 @@
+[package]
+name = "panya-invs"
+description = "PanYa INVS (SQL Server) access: read-only connection and plan/purchase queries"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+panya-core = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tiberius = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+futures = { workspace = true }

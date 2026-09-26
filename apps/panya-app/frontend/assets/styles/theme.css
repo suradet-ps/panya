@@ -1,0 +1,401 @@
+/* ============================================================
+   PanYa Design Tokens
+   ------------------------------------------------------------
+   Single source of truth for colors, fonts, radii and shadows
+   (see DESIGN.md). UI stylesheets must reference these tokens -
+   no raw hex values outside this file.
+   ============================================================ */
+
+:root {
+  /* Action - near-black monochrome */
+  --primary: #111111;
+  --primary-active: #242424;
+  --brand-accent: #3b82f6;
+
+  /* Badge pastels (sparingly) */
+  --badge-orange: #fb923c;
+  --badge-pink: #ec4899;
+  --badge-violet: #8b5cf6;
+  --badge-emerald: #34d399;
+
+  /* Surfaces */
+  --canvas: #ffffff;
+  --surface-soft: #f8f9fa;
+  --surface-card: #f5f5f5;
+  --surface-strong: #e5e7eb;
+  --surface-dark: #101010;
+  --surface-dark-elevated: #1a1a1a;
+  --hairline: #e5e7eb;
+  --hairline-soft: #f3f4f6;
+
+  /* Text */
+  --ink: #111111;
+  --body: #374151;
+  --muted: #6b7280;
+  --muted-soft: #898989;
+  --on-primary: #ffffff;
+  --on-dark: #ffffff;
+  --on-dark-soft: #a1a1aa;
+
+  /* Semantic */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --warning-text: #92400e;
+  --error: #ef4444;
+
+  /* Verdict fills (vivid; bars and dots) */
+  --status-ontrack: #10b981;
+  --status-watch: #f59e0b;
+  --status-behind: #ef4444;
+  --status-over: #3b82f6;
+  --status-unplanned: #fb923c;
+  --status-nodata: #898989;
+
+  /* Verdict text/bg pairs (AA on the tint) */
+  --status-ontrack-text: #047857;
+  --status-ontrack-bg: #ecfdf5;
+  --status-watch-text: #b45309;
+  --status-watch-bg: #fffbeb;
+  --status-behind-text: #b91c1c;
+  --status-behind-bg: #fef2f2;
+  --status-over-text: #1d4ed8;
+  --status-over-bg: #eff6ff;
+  --status-unplanned-text: #c2410c;
+  --status-unplanned-bg: #fff7ed;
+  --status-nodata-text: #616161;
+  --status-nodata-bg: #f5f5f5;
+
+  /* Typography */
+  --font-ui: "IBM Plex Sans Thai", "Leelawadee UI", "Tahoma", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+
+  /* Spacing (base 4px) */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 9999px;
+  --radius-full: 50%;
+
+  /* Elevation */
+  --elevation-soft: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --elevation-raised: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --elevation-overlay: 0 8px 24px rgba(0, 0, 0, 0.18);
+
+  /* Motion */
+  --transition-fast: 150ms ease;
+  --transition-med: 250ms ease;
+}
+
+/* ─── Reset & Base ─────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+::selection {
+  background: rgba(17, 17, 17, 0.12);
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-strong);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-soft);
+}
+
+/* ─── Focus ────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ─── Buttons ──────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  height: 34px;
+  padding: 0 var(--space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-active);
+}
+
+.btn-secondary {
+  background: var(--canvas);
+  color: var(--ink);
+  border-color: var(--hairline);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface-soft);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--body);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-soft);
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  border-color: var(--hairline);
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--surface-soft);
+}
+
+.btn-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.btn-dismiss:hover {
+  background: rgba(17, 17, 17, 0.08);
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--brand-accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ─── Inputs ───────────────────────────────────────────────── */
+
+.input {
+  width: 100%;
+  height: 34px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+  border-color: var(--ink);
+}
+
+.input::placeholder {
+  color: var(--muted-soft);
+}
+
+/* ─── Badges ───────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-connected {
+  background: var(--status-ontrack-bg);
+  color: var(--status-ontrack-text);
+}
+
+.badge-disconnected {
+  background: var(--status-behind-bg);
+  color: var(--status-behind-text);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--muted-soft);
+}
+
+.dot-green {
+  background: var(--success);
+}
+
+.dot-red {
+  background: var(--error);
+}
+
+/* ─── Status badges ────────────────────────────────────────── */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-ontrack {
+  color: var(--status-ontrack-text);
+  background: var(--status-ontrack-bg);
+}
+
+.status-watch {
+  color: var(--status-watch-text);
+  background: var(--status-watch-bg);
+}
+
+.status-behind {
+  color: var(--status-behind-text);
+  background: var(--status-behind-bg);
+}
+
+.status-over {
+  color: var(--status-over-text);
+  background: var(--status-over-bg);
+}
+
+.status-unplanned {
+  color: var(--status-unplanned-text);
+  background: var(--status-unplanned-bg);
+}
+
+.status-nodata {
+  color: var(--status-nodata-text);
+  background: var(--status-nodata-bg);
+}
+
+/* ─── Messages ─────────────────────────────────────────────── */
+
+.message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+.message-error {
+  background: var(--status-behind-bg);
+  color: var(--status-behind-text);
+}
+
+.message-success {
+  background: var(--status-ontrack-bg);
+  color: var(--status-ontrack-text);
+}
+
+/* ─── Animation ────────────────────────────────────────────── */
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeSlideUp var(--transition-med) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

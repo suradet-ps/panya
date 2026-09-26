@@ -1,0 +1,39 @@
+[package]
+name = "panya-frontend"
+description = "PanYa Leptos 0.8 CSR frontend (compiled to WASM via trunk)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+# The Leptos CSR application is a `cdylib` compiled to `wasm32-unknown-unknown`
+# and bundled by trunk; it is a workspace member so it shares the release
+# profile (opt-level "z" + LTO + panic=abort).
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+panya-core = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Document",
+    "Element",
+    "Node",
+    "Event",
+    "EventTarget",
+    "MouseEvent",
+    "KeyboardEvent",
+    "HtmlElement",
+    "HtmlInputElement",
+    "HtmlSelectElement",
+    "CssStyleDeclaration",
+    "console",
+] }
+futures = { workspace = true }
+console_error_panic_hook = { workspace = true }
