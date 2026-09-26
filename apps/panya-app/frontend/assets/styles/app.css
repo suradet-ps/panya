@@ -555,23 +555,8 @@
   background: var(--surface-strong);
 }
 
-.bar-actual.status-ontrack {
-  background: var(--status-ontrack);
-}
-.bar-actual.status-watch {
-  background: var(--status-watch);
-}
-.bar-actual.status-behind {
-  background: var(--status-behind);
-}
-.bar-actual.status-over {
-  background: var(--status-over);
-}
-.bar-actual.status-unplanned {
-  background: var(--status-unplanned);
-}
-.bar-actual.status-nodata {
-  background: var(--status-nodata);
+.bar-actual {
+  background: var(--primary);
 }
 
 .quarter-values {

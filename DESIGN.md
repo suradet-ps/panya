@@ -155,7 +155,7 @@ Semantic & verdict (status = color + tint background):
 | `--status-ontrack` / `-bg` | `#10b981` / `#ecfdf5` | ตามแผน |
 | `--status-watch` / `-bg` | `#f59e0b` / `#fffbeb` | เฝ้าระวัง |
 | `--status-behind` / `-bg` | `#ff1744` / `#fef2f2` | ล่าช้า |
-| `--status-over` / `-bg` | `#3b82f6` / `#eff6ff` | เกินแผน |
+| `--status-over` / `-bg` | `#8b5cf6` / `#f5f3ff` | เกินแผน |
 | `--status-unplanned` / `-bg` | `#fb923c` / `#fff7ed` | นอกแผน |
 | `--status-nodata` / `-bg` | `#898989` / `#f5f5f5` | ไม่มีข้อมูล |
 

@@ -29,7 +29,6 @@ pub fn DrugDetailDrawer() -> impl IntoView {
                         };
                         let code = row.working_code.clone();
                         let status = row.status;
-                        let status_key = status.key();
                         let plan_sum = row.plan_sum;
                         let actual_sum = row.actual_sum;
                         let remaining = (plan_sum - actual_sum).max(0.0);
@@ -92,13 +91,7 @@ pub fn DrugDetailDrawer() -> impl IntoView {
                                         <span>"ซื้อจริง"</span>
                                     </div>
                                     <For each=move || quarter_data.clone() key=|(q, _, _)| *q let:item>
-                                        <QuarterBars
-                                            q=item.0
-                                            plan=item.1
-                                            actual=item.2
-                                            max=max
-                                            status_key=status_key
-                                        />
+                                        <QuarterBars q=item.0 plan=item.1 actual=item.2 max=max />
                                     </For>
                                 </div>
                             </aside>
@@ -111,7 +104,7 @@ pub fn DrugDetailDrawer() -> impl IntoView {
 
 /// One quarter's plan/actual pair as two horizontal bars.
 #[component]
-fn QuarterBars(q: u8, plan: f64, actual: f64, max: f64, status_key: &'static str) -> impl IntoView {
+fn QuarterBars(q: u8, plan: f64, actual: f64, max: f64) -> impl IntoView {
     let width = |value: f64| {
         if max > 0.0 {
             (value / max * 100.0).clamp(0.0, 100.0)
@@ -121,7 +114,6 @@ fn QuarterBars(q: u8, plan: f64, actual: f64, max: f64, status_key: &'static str
     };
     let plan_width = width(plan);
     let actual_width = width(actual);
-    let actual_class = format!("bar-fill bar-actual status-{status_key}");
 
     view! {
         <div class="quarter-row">
@@ -134,7 +126,7 @@ fn QuarterBars(q: u8, plan: f64, actual: f64, max: f64, status_key: &'static str
                     <div class="bar-fill bar-plan" style=format!("width:{plan_width:.1}%")></div>
                 </div>
                 <div class="bar-track">
-                    <div class=actual_class style=format!("width:{actual_width:.1}%")></div>
+                    <div class="bar-fill bar-actual" style=format!("width:{actual_width:.1}%")></div>
                 </div>
             </div>
             <div class="quarter-values">
