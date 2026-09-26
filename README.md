@@ -127,10 +127,10 @@ schema reference, the read-only law, and the open items that need a
 live connection. The design language and the verdict ramp live in
 `DESIGN.md`; the Rust constitution in `AGENTS-RUST.md`.
 
-**Status** - the checks run before every commit: `cargo fmt --check`,
-`cargo check --all-targets`, `cargo clippy` (host and wasm) with
-`-D warnings`, the `panya-core` tests, and the wasm build of the
-frontend. CI gates are not forged yet.
+**Status** - CI gates every change: format, clippy, tests and rustdoc for
+the backend crates; the wasm clippy and trunk build of the Leptos
+frontend; `cargo-deny`; the AgentForge constitution check; and a
+no-bundle Tauri build smoke test. [Watch the gates](.github/workflows).
 
 ---
 

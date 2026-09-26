@@ -112,6 +112,9 @@ is the reference for this crate layout.
   `cargo clippy --all-targets -- -D warnings`, `cargo test --all-features`.
   The Leptos frontend verifies with
   `cargo check -p panya-frontend --target wasm32-unknown-unknown`.
+- `.github/workflows/` is audited with `zizmor` and must report no findings
+  (default and `--pedantic`). Keep actions pinned by full commit SHA and
+  every `permissions` block minimal and inline-commented.
 - See `DESIGN.md` for the tracking rules, screen flows, and the visual
   design system.
 
