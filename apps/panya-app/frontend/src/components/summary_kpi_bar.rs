@@ -1,7 +1,10 @@
 //! The KPI strip: plan, actual purchases, achievement, and alert counts.
 //!
-//! All values come from the tracking payload; the `% ความสำเร็จ` card is the
-//! featured (pink) card - the system's single emphasis signal.
+//! The summary comes from the shared engine's computed verdicts (instant on
+//! quarter change); the year plan comes from the raw payload. The
+//! `% ความสำเร็จ` card is the featured (pink) card - the system's single
+//! emphasis signal. Every read goes through `with`, so showing the numbers
+//! never clones the whole payload.
 
 use leptos::prelude::*;
 
@@ -30,16 +33,24 @@ pub fn SummaryKpiBar() -> impl IntoView {
                     {move || {
                         tracking
                             .data
-                            .get()
-                            .map(|d| {
-                                let planned = if d.year_plan.value_this_year > 0.0 {
-                                    d.year_plan.value_this_year
-                                } else {
-                                    d.summary.plan_total
-                                };
-                                format_baht(planned, 0)
+                            .with(|data| {
+                                data.as_ref()
+                                    .map(|d| {
+                                        let planned = if d.year_plan.value_this_year > 0.0 {
+                                            d.year_plan.value_this_year
+                                        } else {
+                                            tracking
+                                                .computed
+                                                .with(|computed| {
+                                                    computed
+                                                        .as_ref()
+                                                        .map_or(0.0, |c| c.summary.plan_total)
+                                                })
+                                        };
+                                        format_baht(planned, 0)
+                                    })
                             })
-                            .unwrap_or_else(|| "-".to_string())
+                            .unwrap_or_else(|| "—".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">{scope_label}</div>
@@ -50,18 +61,24 @@ pub fn SummaryKpiBar() -> impl IntoView {
                 <div class="kpi-value">
                     {move || {
                         tracking
-                            .data
-                            .get()
-                            .map(|d| format_baht(d.summary.actual_total, 0))
-                            .unwrap_or_else(|| "-".to_string())
+                            .computed
+                            .with(|computed| {
+                                computed
+                                    .as_ref()
+                                    .map(|c| format_baht(c.summary.actual_total, 0))
+                            })
+                            .unwrap_or_else(|| "—".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">
                     {move || {
                         tracking
-                            .data
-                            .get()
-                            .map(|d| format!("{} รายการ", format_number(d.summary.drug_count as f64, 0)))
+                            .computed
+                            .with(|computed| {
+                                computed.as_ref().map(|c| {
+                                    format!("{} รายการ", format_number(c.summary.drug_count as f64, 0))
+                                })
+                            })
                             .unwrap_or_default()
                     }}
                 </div>
@@ -72,10 +89,13 @@ pub fn SummaryKpiBar() -> impl IntoView {
                 <div class="kpi-value kpi-value-featured">
                     {move || {
                         tracking
-                            .data
-                            .get()
-                            .map(|d| format_pct_opt(d.summary.achievement_pct))
-                            .unwrap_or_else(|| "-".to_string())
+                            .computed
+                            .with(|computed| {
+                                computed
+                                    .as_ref()
+                                    .map(|c| format_pct_opt(c.summary.achievement_pct))
+                            })
+                            .unwrap_or_else(|| "—".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">{scope_label}</div>
@@ -86,10 +106,13 @@ pub fn SummaryKpiBar() -> impl IntoView {
                 <div class="kpi-value">
                     {move || {
                         tracking
-                            .data
-                            .get()
-                            .map(|d| d.summary.behind_count.to_string())
-                            .unwrap_or_else(|| "-".to_string())
+                            .computed
+                            .with(|computed| {
+                                computed
+                                    .as_ref()
+                                    .map(|c| c.summary.behind_count.to_string())
+                            })
+                            .unwrap_or_else(|| "—".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">"รายการ"</div>
@@ -100,10 +123,13 @@ pub fn SummaryKpiBar() -> impl IntoView {
                 <div class="kpi-value">
                     {move || {
                         tracking
-                            .data
-                            .get()
-                            .map(|d| d.summary.unplanned_count.to_string())
-                            .unwrap_or_else(|| "-".to_string())
+                            .computed
+                            .with(|computed| {
+                                computed
+                                    .as_ref()
+                                    .map(|c| c.summary.unplanned_count.to_string())
+                            })
+                            .unwrap_or_else(|| "—".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">"รายการ"</div>

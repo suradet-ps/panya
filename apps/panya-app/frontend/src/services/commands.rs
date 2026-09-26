@@ -8,7 +8,7 @@ use serde::Serialize;
 use wasm_bindgen::JsValue;
 
 use super::tauri::{build_args, invoke};
-use crate::models::{BackendError, InvsDbConfig, SettingsFile, TrackingResponse};
+use crate::models::{BackendError, InvsDbConfig, SettingsFile, YearData};
 
 fn arg<T: Serialize>(value: &T) -> JsValue {
     serde_wasm_bindgen::to_value(value).unwrap_or(JsValue::UNDEFINED)
@@ -51,13 +51,10 @@ pub async fn invs_get_plan_years() -> Result<Vec<i32>, BackendError> {
         .map_err(BackendError::from_js)
 }
 
-/// Fetch the tracking payload for `year`, scoped to `quarter` (`0` = ทั้งปี).
-pub async fn invs_get_tracking(year: i32, quarter: u8) -> Result<TrackingResponse, BackendError> {
-    let args = build_args(&[
-        ("year", &JsValue::from(year)),
-        ("quarter", &JsValue::from(quarter)),
-    ]);
-    invoke::<TrackingResponse>("invs_get_tracking", &args)
+/// Fetch the raw plan + actual payload for `year` (once per fiscal year).
+pub async fn invs_get_year_data(year: i32) -> Result<YearData, BackendError> {
+    let args = build_args(&[("year", &JsValue::from(year))]);
+    invoke::<YearData>("invs_get_year_data", &args)
         .await
         .map_err(BackendError::from_js)
 }

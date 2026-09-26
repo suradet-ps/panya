@@ -1,11 +1,13 @@
 //! Wire types and pure formatting helpers.
 //!
-//! Domain types (`TrackingRow`, `TrackingSummary`, `YearPlan`, `Status`) come
-//! from `panya-core`, so the verdict labels and quarter labels have exactly
-//! one definition shared with the backend. Only the IPC envelopes and the
-//! connection settings are mirrored here.
+//! Domain types (`TrackingRow`, `TrackingSummary`, `PlanLine`, `ActualLine`,
+//! `YearPlan`, `Status`) come from `panya-core`, so the verdict engine and
+//! its labels have exactly one definition shared with the backend. Only the
+//! IPC envelopes and the connection settings are mirrored here.
 
-use panya_core::tracking::{TrackingRow, TrackingSummary, YearPlan};
+use std::collections::HashMap;
+
+use panya_core::tracking::{ActualLine, PlanLine, YearPlan};
 use serde::{Deserialize, Serialize};
 
 /// INVS connection settings (mirror of `panya_invs::InvsDbConfig`).
@@ -32,19 +34,21 @@ pub struct SettingsFile {
     pub invs: Option<InvsDbConfig>,
 }
 
-/// The `invs_get_tracking` payload.
+/// The `invs_get_year_data` payload: the raw per-year data. The shared
+/// `panya-core` engine turns this into verdicts for the selected quarter,
+/// so the heavy SQL runs once per fiscal year.
 #[derive(Clone, Debug, Deserialize)]
-pub struct TrackingResponse {
-    /// The selected fiscal year (CE).
+pub struct YearData {
+    /// The requested fiscal year (CE).
     pub year: i32,
-    /// The selected scope: `0` = ทั้งปี, `1..=4` = quarter.
-    pub quarter: u8,
     /// The year-level plan from `BUYPLAN`.
     pub year_plan: YearPlan,
-    /// Headline numbers for the KPI strip.
-    pub summary: TrackingSummary,
-    /// One row per drug.
-    pub rows: Vec<TrackingRow>,
+    /// The per-drug plan lines from `BUYPLAN_C`.
+    pub plan_lines: Vec<PlanLine>,
+    /// Actual purchases per quarter, keyed by `WORKING_CODE`.
+    pub actual: HashMap<String, ActualLine>,
+    /// Wall-clock time the backend queries took.
+    pub elapsed_ms: u64,
 }
 
 // ─── Backend error ────────────────────────────────────────────────────

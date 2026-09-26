@@ -29,30 +29,25 @@ pub fn App() -> impl IntoView {
     let tracking = TrackingContext::provide();
     let show_settings = RwSignal::new(false);
 
-    // Boot: load persisted settings (auto-connects), seed the year selector,
-    // and start the health-poll loop. The first launch has no settings, so
+    // Boot: load persisted settings (auto-connects) and start the health-poll
+    // loop. The connection watcher below owns the year list and the first
+    // load, so nothing is fetched twice. The first launch has no settings, so
     // the modal opens immediately.
     let root_ref = NodeRef::<Div>::new();
     root_ref.on_load(move |_| {
         spawn_local(async move {
             db.init_from_storage().await;
-            if db.connected.get_untracked() {
-                let years = tracking.fetch_years().await;
-                if let Some(first) = years.first() {
-                    tracking.year.set(*first);
-                } else {
-                    tracking.year.set(current_fiscal_year());
-                    tracking.load().await;
-                }
-            } else {
+            if !db.connected.get_untracked() {
                 show_settings.set(true);
             }
             db.start_health_polling(15_000);
         });
     });
 
-    // First successful connection (boot auto-connect or a Test in the
-    // modal) → load the year list and the first payload.
+    // First successful connection (boot auto-connect or a Test in the modal)
+    // → load the year list and the first payload. Setting the year triggers
+    // the scope effect below; otherwise this loads directly - exactly one
+    // load either way.
     let was_connected = Rc::new(Cell::new(false));
     Effect::new(move |_| {
         let connected = db.connected.get();
@@ -60,8 +55,10 @@ pub fn App() -> impl IntoView {
             spawn_local(async move {
                 let years = tracking.fetch_years().await;
                 let current = tracking.year.get_untracked();
-                if !years.is_empty() && !years.contains(&current) {
-                    // Setting the year triggers the scope effect below.
+                if years.is_empty() {
+                    // No plan years in INVS yet: fall back to the clock.
+                    tracking.year.set(current_fiscal_year());
+                } else if !years.contains(&current) {
                     tracking.year.set(years[0]);
                 } else {
                     tracking.load().await;
@@ -70,11 +67,11 @@ pub fn App() -> impl IntoView {
         }
     });
 
-    // Year or quarter scope change → reload (only while connected; a
-    // disconnected app already shows its own banner and error).
+    // Year change → reload (only while connected; a disconnected app already
+    // shows its own banner and error). Quarter changes do not reload: the
+    // shared engine recomputes the verdicts from the same payload instantly.
     Effect::new(move |_| {
         let _ = tracking.year.get();
-        let _ = tracking.quarter.get();
         if db.connected.get_untracked() {
             spawn_local(async move {
                 tracking.load().await;

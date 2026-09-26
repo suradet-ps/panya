@@ -14,7 +14,9 @@ pub mod queries;
 pub use client::{InvsClient, connect};
 pub use config::InvsDbConfig;
 pub use panya_core::tracking::{ActualLine, PlanLine, YearPlan};
-pub use queries::{get_actual_quarters, get_plan_lines, get_plan_years, get_year_plan, ping};
+pub use queries::{
+    get_actual_quarters, get_drug_names, get_plan_lines, get_plan_years, get_year_plan, ping,
+};
 
 /// Everything that can go wrong while talking to INVS.
 #[derive(Debug, thiserror::Error)]

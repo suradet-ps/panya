@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use futures::TryStreamExt;
 use panya_core::fiscal::{cal_month_to_quarter_idx, quarter_range};
 use panya_core::tracking::{ActualLine, PlanLine, YearPlan};
-use tiberius::{QueryItem, Row};
+use tiberius::{QueryItem, Row, ToSql};
 
 use crate::InvsError;
 use crate::client::InvsClient;
@@ -187,6 +187,10 @@ pub async fn get_plan_lines(
 /// to that quarter. The returned arrays are always full-year shaped, so the
 /// table and the detail view keep all four quarters either way.
 ///
+/// No `DRUG_GN` join here: this is the heavy query (a whole fiscal year of
+/// purchase lines), and names are only needed for unplanned codes - fetched
+/// separately by [`get_drug_names`] for just those codes.
+///
 /// # Errors
 ///
 /// Returns [`InvsError::Query`] / [`InvsError::Row`] when the query fails.
@@ -197,20 +201,21 @@ pub async fn get_actual_quarters(
 ) -> Result<HashMap<String, ActualLine>, InvsError> {
     let (start_date, end_date) = quarter_range(year, quarter);
 
+    // `RECEIVE_DATE` is an INT in YYYYMMDD form, so the calendar month is
+    // integer arithmetic - no per-row CAST to varchar/date, and the GROUP BY
+    // stays on plain integer expressions.
     let query = "
         SELECT
             c.[WORKING_CODE],
-            ISNULL(MAX(g.[DRUG_NAME]), '') AS drug_name,
-            MONTH(CAST(CAST(h.[RECEIVE_DATE] AS VARCHAR(8)) AS DATE)) AS cal_month,
+            (h.[RECEIVE_DATE] / 100) % 100 AS cal_month,
             SUM(ISNULL(CAST(c.[VALUE] AS FLOAT), 0)) AS total_value
         FROM MS_IVO_C c
         JOIN MS_IVO h ON c.[INVOICE_NO] = h.[INVOICE_NO]
-        LEFT JOIN DRUG_GN g ON g.[WORKING_CODE] = c.[WORKING_CODE]
         WHERE h.[RECEIVE_DATE] >= @P1
           AND h.[RECEIVE_DATE] <= @P2
         GROUP BY
             c.[WORKING_CODE],
-            MONTH(CAST(CAST(h.[RECEIVE_DATE] AS VARCHAR(8)) AS DATE))
+            (h.[RECEIVE_DATE] / 100) % 100
         ORDER BY c.[WORKING_CODE]
     ";
 
@@ -227,21 +232,59 @@ pub async fn get_actual_quarters(
             if code.is_empty() {
                 continue;
             }
-            let Some(idx) = cal_month_to_quarter_idx(get_i32(&row, 2).unsigned_abs()) else {
+            let Some(idx) = cal_month_to_quarter_idx(get_i32(&row, 1).unsigned_abs()) else {
                 continue;
             };
-            let value = get_f64(&row, 3);
-            let name = get_str(&row, 1);
+            let value = get_f64(&row, 2);
 
-            let entry = actual.entry(code).or_default();
-            entry.quarters[idx] += value;
-            if entry.drug_name.is_none() && !name.is_empty() {
-                entry.drug_name = Some(name);
-            }
+            actual.entry(code).or_default().quarters[idx] += value;
         }
     }
 
     Ok(actual)
+}
+
+/// Drug names from `DRUG_GN` for the given codes, chunked into one query per
+/// [`NAME_LOOKUP_CHUNK`] codes (the heavy purchase query no longer joins the
+/// drug master, so only the unplanned codes need a name).
+///
+/// # Errors
+///
+/// Returns [`InvsError::Query`] / [`InvsError::Row`] when a query fails.
+pub async fn get_drug_names(
+    client: &mut InvsClient,
+    codes: &[String],
+) -> Result<HashMap<String, String>, InvsError> {
+    /// Codes per `IN (...)` batch; keeps the parameter count sane.
+    const NAME_LOOKUP_CHUNK: usize = 500;
+
+    let mut names = HashMap::new();
+
+    for chunk in codes.chunks(NAME_LOOKUP_CHUNK) {
+        let placeholders = (1..=chunk.len())
+            .map(|i| format!("@P{i}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let query = format!(
+            "SELECT [WORKING_CODE], ISNULL([DRUG_NAME], '') \
+             FROM DRUG_GN WHERE [WORKING_CODE] IN ({placeholders})"
+        );
+        let params: Vec<&dyn ToSql> = chunk.iter().map(|code| code as &dyn ToSql).collect();
+
+        let mut stream = client.query(&query, &params).await.map_err(query_err)?;
+
+        while let Some(item) = stream.try_next().await.map_err(row_err)? {
+            if let QueryItem::Row(row) = item {
+                let code = get_str(&row, 0);
+                let name = get_str(&row, 1);
+                if !code.is_empty() && !name.is_empty() {
+                    names.insert(code, name);
+                }
+            }
+        }
+    }
+
+    Ok(names)
 }
 
 /// Cheap round-trip for the connection-health poll; drains the reply.

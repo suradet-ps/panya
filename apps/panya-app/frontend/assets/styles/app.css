@@ -229,6 +229,11 @@
   color: var(--on-primary);
 }
 
+.loading-hint {
+  font-size: 12px;
+  color: var(--muted-soft);
+}
+
 .search-box {
   position: relative;
   display: flex;

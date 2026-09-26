@@ -384,7 +384,10 @@ typed password buffers zeroized on close.
   `VALUE`, `QTY_ORDER`); `DRUG_GN` supplies `DRUG_NAME`.
 - **Assembly:** plan and actual are fetched as separate result sets and
   joined in Rust by `WORKING_CODE` (HashMap). No cross joins in SQL, no
-  per-drug query loops for the table.
+  per-drug query loops for the table. The command layer fetches one raw
+  payload per fiscal year and the frontend runs the shared `panya-core`
+  engine per selected quarter, so switching quarters is instant and the
+  heavy SQL runs once per year.
 - **Two directions, both visible:** plan rows with no purchase (ยังไม่ซื้อ)
   and purchases with no plan row (นอกแผน) are equally part of the verdict.
 - **One date truth:** calendar → fiscal year → quarter mapping lives in one

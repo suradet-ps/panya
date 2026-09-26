@@ -1,9 +1,16 @@
 //! Tracking dashboard state: year, quarter scope, filters, and rows.
+//!
+//! The backend sends the raw per-year payload (`YearData`); the shared
+//! `panya-core` engine computes the verdicts here in wasm. Switching quarters
+//! is therefore instant - it recomputes from the same payload and never hits
+//! SQL - and the heavy queries run once per fiscal year.
+
+use std::collections::HashMap;
 
 use leptos::prelude::*;
-use panya_core::tracking::{Status, TrackingRow};
+use panya_core::tracking::{Status, Thresholds, TrackingRow, TrackingSummary, track};
 
-use crate::models::TrackingResponse;
+use crate::models::YearData;
 use crate::services::commands;
 
 /// The status filter applied to the table.
@@ -53,6 +60,15 @@ impl StatusFilter {
     }
 }
 
+/// The verdicts for the selected scope.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Computed {
+    /// Headline numbers for the KPI strip.
+    pub summary: TrackingSummary,
+    /// One row per drug (plan lines first, unplanned purchases appended).
+    pub rows: Vec<TrackingRow>,
+}
+
 /// Shared tracking state.
 #[derive(Clone, Copy, Debug)]
 pub struct TrackingContext {
@@ -66,14 +82,14 @@ pub struct TrackingContext {
     pub search: RwSignal<String>,
     /// Fiscal years available in `BUYPLAN_C`.
     pub years: RwSignal<Vec<i32>>,
-    /// The last loaded payload.
-    pub data: RwSignal<Option<TrackingResponse>>,
-    /// Monotonic counter bumped on every successful load. The table keys its
-    /// rows by `(working_code, revision)`: Leptos `For` reuses a view whose
-    /// key is unchanged and never re-renders it with the new item, so without
-    /// the revision a year switch would keep the previous year's numbers in
-    /// the rows (the codes are mostly the same).
-    pub revision: RwSignal<u64>,
+    /// The raw payload for the selected year (SQL runs once per year).
+    pub data: RwSignal<Option<YearData>>,
+    /// Verdicts for `data`, scoped to `quarter` - recomputed instantly.
+    pub computed: Memo<Option<Computed>>,
+    /// `working_code -> position in the computed rows`, built once per
+    /// payload/scope change. Stored (not created per call) so every cell
+    /// read is O(1).
+    index: Memo<HashMap<String, usize>>,
     /// Whether a load is in flight.
     pub loading: RwSignal<bool>,
     /// Last load error.
@@ -86,17 +102,59 @@ impl TrackingContext {
     /// Create the signals, register them in context, and return the handle.
     #[must_use]
     pub fn provide() -> Self {
+        let year = RwSignal::new(0);
+        let quarter = RwSignal::new(0);
+        let status_filter = RwSignal::new(StatusFilter::All);
+        let search = RwSignal::new(String::new());
+        let years = RwSignal::new(Vec::new());
+        let data: RwSignal<Option<YearData>> = RwSignal::new(None);
+        let loading = RwSignal::new(false);
+        let error = RwSignal::new(None);
+        let selected = RwSignal::new(None);
+
+        // The verdicts for the current scope. Runs the shared engine in
+        // wasm; a quarter change recomputes here, no SQL involved.
+        let computed = Memo::new(move |_| {
+            data.with(|data| {
+                data.as_ref().map(|data| {
+                    let (rows, summary) = track(
+                        &data.plan_lines,
+                        &data.actual,
+                        quarter.get(),
+                        Thresholds::default(),
+                    );
+                    Computed { summary, rows }
+                })
+            })
+        });
+
+        // Built once here, not per call: a memo created inside `with_row`
+        // would rebuild the whole index on every cell read.
+        let index = Memo::new(move |_| {
+            computed.with(|computed| -> HashMap<String, usize> {
+                computed.as_ref().map_or_else(HashMap::new, |computed| {
+                    computed
+                        .rows
+                        .iter()
+                        .enumerate()
+                        .map(|(index, row)| (row.working_code.clone(), index))
+                        .collect()
+                })
+            })
+        });
+
         let ctx = Self {
-            year: RwSignal::new(0),
-            quarter: RwSignal::new(0),
-            status_filter: RwSignal::new(StatusFilter::All),
-            search: RwSignal::new(String::new()),
-            years: RwSignal::new(Vec::new()),
-            data: RwSignal::new(None),
-            revision: RwSignal::new(0),
-            loading: RwSignal::new(false),
-            error: RwSignal::new(None),
-            selected: RwSignal::new(None),
+            year,
+            quarter,
+            status_filter,
+            search,
+            years,
+            data,
+            computed,
+            index,
+            loading,
+            error,
+            selected,
         };
         provide_context(ctx);
         ctx
@@ -116,24 +174,16 @@ impl TrackingContext {
         }
     }
 
-    /// Load the tracking payload for the current year and quarter scope.
+    /// Load the raw payload for the current year. Quarter changes do not
+    /// call this: the shared engine recomputes from the same payload.
     pub async fn load(self) {
         self.loading.set(true);
         self.error.set(None);
         let year = self.year.get_untracked();
-        let quarter = self.quarter.get_untracked();
-        match commands::invs_get_tracking(year, quarter).await {
-            // Discard a response that belongs to a scope the operator has
-            // already left (fast year/quarter switching); the payload echoes
-            // its own year/quarter for exactly this check.
+        match commands::invs_get_year_data(year).await {
+            // Discard a response for a year the operator has already left.
             Ok(data) => {
-                if data.year == self.year.get_untracked()
-                    && data.quarter == self.quarter.get_untracked()
-                {
-                    // Bump before storing: the rebuild is triggered by `data`,
-                    // and the row key must already read the new revision.
-                    self.revision
-                        .update(|revision| *revision = revision.wrapping_add(1));
+                if data.year == self.year.get_untracked() {
                     self.data.set(Some(data));
                 }
             }
@@ -145,31 +195,45 @@ impl TrackingContext {
         self.loading.set(false);
     }
 
-    /// The table rows after the status filter and search, sorted by plan.
+    /// The `WORKING_CODE`s after the status filter and search, sorted by plan.
+    ///
+    /// The list is what `<For>` diffs: it never clones the rows themselves,
+    /// so typing in the search box or reloading the payload only re-diffs
+    /// codes, and each row reads its own fields reactively via [`Self::with_row`].
     #[must_use]
-    pub fn rows(self) -> Memo<Vec<TrackingRow>> {
+    pub fn visible_codes(self) -> Memo<Vec<String>> {
         Memo::new(move |_| {
-            let Some(data) = self.data.get() else {
-                return Vec::new();
-            };
             let filter = self.status_filter.get();
             let query = self.search.get().trim().to_lowercase();
-            let mut rows: Vec<TrackingRow> = data
-                .rows
-                .into_iter()
-                .filter(|row| filter.matches(row.status))
-                .filter(|row| {
-                    query.is_empty()
-                        || row.working_code.to_lowercase().contains(&query)
-                        || row.drug_name.to_lowercase().contains(&query)
-                })
-                .collect();
-            rows.sort_by(|a, b| {
-                b.plan_sum
-                    .partial_cmp(&a.plan_sum)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
-            rows
+            self.computed.with(|computed| {
+                let Some(computed) = computed.as_ref() else {
+                    return Vec::new();
+                };
+                let mut hits: Vec<(&str, f64)> = computed
+                    .rows
+                    .iter()
+                    .filter(|row| filter.matches(row.status))
+                    .filter(|row| {
+                        query.is_empty()
+                            || row.working_code.to_lowercase().contains(&query)
+                            || row.drug_name.to_lowercase().contains(&query)
+                    })
+                    .map(|row| (row.working_code.as_str(), row.plan_sum))
+                    .collect();
+                hits.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                hits.into_iter().map(|(code, _)| code.to_string()).collect()
+            })
+        })
+    }
+
+    /// Run `f` on the computed row for `code` without cloning the whole
+    /// payload. Meant to be called inside a reactive closure: it subscribes
+    /// to both the computed verdicts and the index, so a reload updates every
+    /// cell in place instead of rebuilding the table.
+    pub fn with_row<R>(self, code: &str, f: impl FnOnce(Option<&TrackingRow>) -> R) -> R {
+        let index = self.index.with(|index| index.get(code).copied());
+        self.computed.with(|computed| {
+            f(index.and_then(|i| computed.as_ref().and_then(|computed| computed.rows.get(i))))
         })
     }
 
@@ -178,8 +242,7 @@ impl TrackingContext {
     pub fn selected_row(self) -> Memo<Option<TrackingRow>> {
         Memo::new(move |_| {
             let code = self.selected.get()?;
-            let data = self.data.get()?;
-            data.rows.into_iter().find(|row| row.working_code == code)
+            self.with_row(&code, |row| row.cloned())
         })
     }
 }

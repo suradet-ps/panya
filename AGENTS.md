@@ -45,10 +45,12 @@ correct queries. Do not duplicate DESIGN.md content here - link to it.
 - **One source of date truth.** All calendar ↔ fiscal year ↔ quarter mapping
   lives in one pure, unit-tested module. Never duplicate date math in SQL,
   IPC handlers, or the UI.
-- **The tracking engine is pure.** Plan vs. actual comparison takes numbers
-  in and returns per-drug/per-quarter verdicts; no I/O, unit-tested. Tauri
-  command handlers stay thin adapters: parse args → call the engine →
-  serialize.
+- **The tracking engine is pure and shared.** Plan vs. actual comparison
+  takes numbers in and returns per-drug/per-quarter verdicts; no I/O,
+  unit-tested. `panya-core` compiles into both the Tauri shell and the wasm
+  frontend: the command layer fetches the raw per-year payload (the heavy
+  SQL runs once per fiscal year) and the frontend runs the engine per
+  selected quarter - switching quarters never queries SQL.
 - **Thai UI.** All user-facing strings are Thai. "No data" is a visible,
   legitimate state - never a blank that looks comparable.
 - **Schema assumptions must be verified against the live read-only INVS**
@@ -73,8 +75,11 @@ live schema before relying on types, nullability, or uniqueness.
 Query shape (from balance, reuse the pattern): aggregate actuals with
 `MS_IVO_C JOIN MS_IVO ON c.INVOICE_NO = h.INVOICE_NO`, windowed on
 `h.RECEIVE_DATE` between the fiscal-year start/end as `YYYYMMDD` integers,
-`LEFT JOIN DRUG_GN` for names, then assemble plan × actual in Rust (HashMap
-by `WORKING_CODE`) - do not cross-join in SQL.
+then assemble plan × actual in Rust (HashMap by `WORKING_CODE`) - do not
+cross-join in SQL. Keep the heavy purchase query lean: derive the calendar
+month with integer arithmetic (`(h.RECEIVE_DATE / 100) % 100`), never join
+`DRUG_GN` there, and fetch names only for unplanned codes
+(`get_drug_names`, chunked `IN`).
 
 ## Repository Layout
 

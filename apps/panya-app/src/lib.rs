@@ -24,7 +24,7 @@ pub fn run() {
             commands::invs_connect,
             commands::invs_ping,
             commands::invs_get_plan_years,
-            commands::invs_get_tracking,
+            commands::invs_get_year_data,
         ])
         .run(tauri::generate_context!())
         .expect("invariant: tauri context is generated at compile time and is always valid");

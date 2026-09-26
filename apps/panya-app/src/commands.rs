@@ -4,10 +4,15 @@
 //! message (the project override on `AGENTS-RUST.md` §5.2): the frontend
 //! displays the string as-is, while the typed `thiserror` errors live in the
 //! library crates.
+//!
+//! Verdicts are **not** computed here: `invs_get_year_data` returns the raw
+//! per-year payload and the frontend runs the shared `panya-core` engine, so
+//! the heavy SQL runs once per fiscal year and switching quarters is instant.
 
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use panya_core::tracking::{Thresholds, TrackingRow, TrackingSummary, YearPlan, track};
+use panya_core::tracking::{ActualLine, PlanLine, YearPlan};
 use panya_invs::{InvsClient, InvsDbConfig};
 use serde::Serialize;
 use tauri::State;
@@ -64,31 +69,32 @@ pub async fn invs_get_plan_years(state: State<'_, InvsDbState>) -> Result<Vec<i3
         .map_err(|e| format!("ดึงปีงบประมาณจาก INVS ไม่สำเร็จ: {e}"))
 }
 
-/// The full tracking payload for one fiscal year and quarter scope.
+/// The raw tracking payload for one fiscal year.
 #[derive(Debug, Serialize)]
-pub struct TrackingResponse {
-    /// The selected fiscal year (CE, as stored in INVS).
+pub struct YearData {
+    /// The requested fiscal year (CE, as stored in INVS).
     pub year: i32,
-    /// The selected scope: `0` = ทั้งปี, `1..=4` = quarter.
-    pub quarter: u8,
     /// The year-level plan from `BUYPLAN`.
     pub year_plan: YearPlan,
-    /// Headline numbers for the KPI strip.
-    pub summary: TrackingSummary,
-    /// One row per drug (plan lines first, unplanned purchases appended).
-    pub rows: Vec<TrackingRow>,
+    /// The per-drug plan lines from `BUYPLAN_C`.
+    pub plan_lines: Vec<PlanLine>,
+    /// Actual purchases per quarter, keyed by `WORKING_CODE`.
+    pub actual: HashMap<String, ActualLine>,
+    /// Wall-clock time the queries took, for the UI's load-time hint.
+    pub elapsed_ms: u64,
 }
 
-/// Fetch plans + actual purchases for `year`, then run the pure engine with
-/// the `quarter` scope (`0` = ทั้งปี).
+/// Fetch the plan + actual purchases for `year` - the only command that runs
+/// the heavy queries, called once per fiscal year.
 #[tauri::command]
-pub async fn invs_get_tracking(
+pub async fn invs_get_year_data(
     year: i32,
-    quarter: u8,
     state: State<'_, InvsDbState>,
-) -> Result<TrackingResponse, String> {
+) -> Result<YearData, String> {
     let mut guard = state.0.lock().await;
     let client = guard.as_mut().ok_or_else(|| NOT_CONNECTED.to_string())?;
+
+    let started = std::time::Instant::now();
 
     let year_plan = panya_invs::get_year_plan(client, year)
         .await
@@ -96,20 +102,37 @@ pub async fn invs_get_tracking(
     let plan_lines = panya_invs::get_plan_lines(client, year)
         .await
         .map_err(|e| format!("ดึงแผนรายยาไม่สำเร็จ: {e}"))?;
-    // The actual window is always the whole fiscal year: the quarter scope
-    // only affects the verdict math, so the table can always show all four
-    // quarters.
-    let actual = panya_invs::get_actual_quarters(client, year, 0)
+    let mut actual = panya_invs::get_actual_quarters(client, year, 0)
         .await
         .map_err(|e| format!("ดึงยอดซื้อจริงไม่สำเร็จ: {e}"))?;
 
-    let (rows, summary) = track(&plan_lines, &actual, quarter, Thresholds::default());
+    // The heavy query skips the drug master, so only the unplanned codes
+    // (absent from the plan, or unnamed there) need a name lookup.
+    let planned: HashSet<&str> = plan_lines
+        .iter()
+        .map(|line| line.working_code.as_str())
+        .collect();
+    let missing: Vec<String> = actual
+        .iter()
+        .filter(|(code, line)| line.drug_name.is_none() && !planned.contains(code.as_str()))
+        .map(|(code, _)| code.clone())
+        .collect();
+    if !missing.is_empty() {
+        let names = panya_invs::get_drug_names(client, &missing)
+            .await
+            .map_err(|e| format!("ดึงชื่อยานอกแผนไม่สำเร็จ: {e}"))?;
+        for (code, name) in names {
+            if let Some(line) = actual.get_mut(&code) {
+                line.drug_name = Some(name);
+            }
+        }
+    }
 
-    Ok(TrackingResponse {
+    Ok(YearData {
         year,
-        quarter,
         year_plan,
-        summary,
-        rows,
+        plan_lines,
+        actual,
+        elapsed_ms: started.elapsed().as_millis() as u64,
     })
 }

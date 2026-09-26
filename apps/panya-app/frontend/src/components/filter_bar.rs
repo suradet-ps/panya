@@ -51,6 +51,23 @@ pub fn FilterBar() -> impl IntoView {
                 </For>
             </div>
 
+            <Show when=move || tracking.loading.get()>
+                <span class="loading-hint">"กำลังโหลด…"</span>
+            </Show>
+
+            <Show when=move || !tracking.loading.get() && tracking.data.with(|data| data.is_some())>
+                <span class="loading-hint">
+                    {move || {
+                        tracking
+                            .data
+                            .with(|data| {
+                                data.as_ref().map(|d| format!("โหลด {} ms", d.elapsed_ms))
+                            })
+                            .unwrap_or_default()
+                    }}
+                </span>
+            </Show>
+
             <div class="search-box">
                 <Icon kind=IconKind::Search size=14 />
                 <input

@@ -112,7 +112,7 @@ impl PlanLine {
 }
 
 /// Actual purchase values per quarter for one `WORKING_CODE`.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ActualLine {
     /// `DRUG_GN.DRUG_NAME` when the join found the drug.
     pub drug_name: Option<String>,
