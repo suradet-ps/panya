@@ -245,7 +245,7 @@ pub async fn get_actual_quarters(
 }
 
 /// Drug names from `DRUG_GN` for the given codes, chunked into one query per
-/// [`NAME_LOOKUP_CHUNK`] codes (the heavy purchase query no longer joins the
+/// `NAME_LOOKUP_CHUNK` codes (the heavy purchase query no longer joins the
 /// drug master, so only the unplanned codes need a name).
 ///
 /// # Errors
