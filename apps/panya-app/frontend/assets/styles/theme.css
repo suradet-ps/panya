@@ -7,21 +7,21 @@
    ============================================================ */
 
 :root {
-  /* Action - the app-icon pink, with comic-black text (AA on pink) */
-  --primary: #ff4081;
-  --primary-active: #e91e63;
-  --link: #c2185b;
+  /* Action - the app-icon sky blue, with icon-navy text (AA on sky) */
+  --primary: #38bdf8;
+  --primary-active: #0ea5e9;
+  --link: #0369a1;
 
   /* Badge pastels (sparingly) */
   --badge-orange: #fb923c;
-  --badge-pink: #ec4899;
+  --badge-sky: #38bdf8;
   --badge-violet: #8b5cf6;
   --badge-emerald: #34d399;
 
   /* Surfaces */
   --canvas: #ffffff;
-  --surface-soft: #fff4f8;
-  --surface-card: #fdeff5;
+  --surface-soft: #f0f9ff;
+  --surface-card: #e0f2fe;
   --surface-strong: #e5e7eb;
   --hairline: #e5e7eb;
   --hairline-soft: #f3f4f6;
@@ -31,7 +31,7 @@
   --body: #374151;
   --muted: #6b7280;
   --muted-soft: #898989;
-  --on-primary: #111111;
+  --on-primary: #0f172a;
 
   /* Semantic */
   --success: #10b981;
@@ -42,8 +42,8 @@
   /* Verdict fills (vivid; bars and dots) */
   --status-ontrack: #10b981;
   --status-watch: #f59e0b;
-  --status-behind: #ff1744;
-  --status-over: #ff1744;
+  --status-behind: #ef4444;
+  --status-over: #ef4444;
   --status-unplanned: #fb923c;
   --status-nodata: #898989;
 
@@ -121,7 +121,7 @@ body {
 }
 
 ::selection {
-  background: rgba(255, 64, 129, 0.18);
+  background: rgba(56, 189, 248, 0.18);
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────── */
@@ -236,7 +236,7 @@ body {
 }
 
 .btn-dismiss:hover {
-  background: rgba(255, 64, 129, 0.14);
+  background: rgba(56, 189, 248, 0.18);
 }
 
 .link-btn {

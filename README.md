@@ -78,7 +78,7 @@ Three parts, one law that never bends: INVS is read, never written.
   credential reaches disk, logs, or error messages.
 - **Speaks** - the Leptos frontend is Thai-only: the KPI strip, quarter
   and status pills, the tracking table, and the per-drug drawer. The
-  pink comes from the icon; the verdict colors carry severity, never
+  blue comes from the icon; the verdict colors carry severity, never
   decoration.
 - **Marks** - `icon-master.svg` is the single source for the app icon;
   `script/gen-icons.sh` forges every platform size with `cargo tauri

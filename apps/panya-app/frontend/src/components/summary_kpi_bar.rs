@@ -2,7 +2,7 @@
 //!
 //! The summary comes from the shared engine's computed verdicts (instant on
 //! quarter change); the year plan comes from the raw payload. The
-//! `% ความสำเร็จ` card is the featured (pink) card - the system's single
+//! `% ความสำเร็จ` card is the featured (sky-blue) card - the system's single
 //! emphasis signal. Every read goes through `with`, so showing the numbers
 //! never clones the whole payload.
 
