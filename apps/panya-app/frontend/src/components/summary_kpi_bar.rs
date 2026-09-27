@@ -50,7 +50,7 @@ pub fn SummaryKpiBar() -> impl IntoView {
                                         format_baht(planned, 0)
                                     })
                             })
-                            .unwrap_or_else(|| "—".to_string())
+                            .unwrap_or_else(|| "-".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">{scope_label}</div>
@@ -67,7 +67,7 @@ pub fn SummaryKpiBar() -> impl IntoView {
                                     .as_ref()
                                     .map(|c| format_baht(c.summary.actual_total, 0))
                             })
-                            .unwrap_or_else(|| "—".to_string())
+                            .unwrap_or_else(|| "-".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">
@@ -95,7 +95,7 @@ pub fn SummaryKpiBar() -> impl IntoView {
                                     .as_ref()
                                     .map(|c| format_pct_opt(c.summary.achievement_pct))
                             })
-                            .unwrap_or_else(|| "—".to_string())
+                            .unwrap_or_else(|| "-".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">{scope_label}</div>
@@ -112,7 +112,7 @@ pub fn SummaryKpiBar() -> impl IntoView {
                                     .as_ref()
                                     .map(|c| c.summary.behind_count.to_string())
                             })
-                            .unwrap_or_else(|| "—".to_string())
+                            .unwrap_or_else(|| "-".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">"รายการ"</div>
@@ -129,7 +129,7 @@ pub fn SummaryKpiBar() -> impl IntoView {
                                     .as_ref()
                                     .map(|c| c.summary.unplanned_count.to_string())
                             })
-                            .unwrap_or_else(|| "—".to_string())
+                            .unwrap_or_else(|| "-".to_string())
                     }}
                 </div>
                 <div class="kpi-sub">"รายการ"</div>

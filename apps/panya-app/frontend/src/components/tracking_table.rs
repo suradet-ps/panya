@@ -309,7 +309,7 @@ fn TrackingRowItem(
 
     let name = cell(tracking, code.clone(), |row| {
         if row.drug_name.is_empty() {
-            "—".to_string()
+            "-".to_string()
         } else {
             row.drug_name.clone()
         }
@@ -355,7 +355,7 @@ fn TrackingRowItem(
         let code = code.clone();
         move || {
             tracking.with_row(&code, |row| {
-                row.map_or_else(|| "—".to_string(), |row| row.status.label_th().to_string())
+                row.map_or_else(|| "-".to_string(), |row| row.status.label_th().to_string())
             })
         }
     };
@@ -389,13 +389,13 @@ fn TrackingRowItem(
     }
 }
 
-/// A reactive cell: formats one field of the row for `code` (or `—`).
+/// A reactive cell: formats one field of the row for `code` (or `-`).
 fn cell(
     tracking: TrackingContext,
     code: String,
     format: fn(&TrackingRow) -> String,
 ) -> impl Fn() -> String {
-    move || tracking.with_row(&code, |row| row.map_or_else(|| "—".to_string(), format))
+    move || tracking.with_row(&code, |row| row.map_or_else(|| "-".to_string(), format))
 }
 
 /// Move DOM focus to the row for `code` (roving tabindex).
