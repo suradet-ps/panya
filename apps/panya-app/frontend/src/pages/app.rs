@@ -45,14 +45,18 @@ pub fn App() -> impl IntoView {
         });
     });
 
-    // First successful connection (boot auto-connect or a Test in the modal)
-    // → load the year list and the first payload. Setting the year triggers
-    // the scope effect below; otherwise this loads directly - exactly one
-    // load either way.
+    // Every rising edge of the connection (boot auto-connect, a Test in the
+    // modal, or a reconnect after a loss) → load the year list and the
+    // payload. Setting the year triggers the scope effect below; otherwise
+    // this loads directly - exactly one load either way.
     let was_connected = Rc::new(Cell::new(false));
     Effect::new(move |_| {
         let connected = db.connected.get();
-        if connected && !was_connected.replace(connected) {
+        // The previous state must be recorded on every transition, including
+        // false: short-circuiting the update here once left `was_connected`
+        // stuck true, so the reload block never ran again after a reconnect.
+        let was = was_connected.replace(connected);
+        if connected && !was {
             spawn_local(async move {
                 let years = tracking.fetch_years().await;
                 let current = tracking.year.get_untracked();
