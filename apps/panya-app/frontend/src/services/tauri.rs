@@ -51,9 +51,7 @@ pub async fn invoke<T: DeserializeOwned>(cmd: &str, args: &JsValue) -> Result<T,
         .call2(&core, &JsValue::from_str(cmd), args)
         .map_err(|e| JsValue::from_str(&format!("failed to call {cmd}: {e:?}")))?;
 
-    let result = JsFuture::from(promise.unchecked_into::<Promise>())
-        .await
-        .map_err(|e| JsValue::from_str(&format!("{cmd} rejected: {e:?}")))?;
+    let result = JsFuture::from(promise.unchecked_into::<Promise>()).await?;
 
     serde_wasm_bindgen::from_value(result)
         .map_err(|e| JsValue::from_str(&format!("failed to decode {cmd} result: {e:?}")))

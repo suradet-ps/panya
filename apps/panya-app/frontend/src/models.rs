@@ -61,12 +61,20 @@ pub struct BackendError {
 }
 
 impl BackendError {
-    /// Decode a rejected `invoke` payload.
+    /// Decode a rejected `invoke` payload: the backend's Thai messages arrive
+    /// as plain strings; anything else falls back to the JS `message`
+    /// property before a final debug rendering.
     #[must_use]
     pub fn from_js(raw: wasm_bindgen::JsValue) -> Self {
-        Self {
-            message: raw.as_string().unwrap_or_else(|| format!("{raw:?}")),
-        }
+        let message = raw
+            .as_string()
+            .or_else(|| {
+                js_sys::Reflect::get(&raw, &wasm_bindgen::JsValue::from_str("message"))
+                    .ok()
+                    .and_then(|value| value.as_string())
+            })
+            .unwrap_or_else(|| format!("{raw:?}"));
+        Self { message }
     }
 }
 
