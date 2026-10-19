@@ -1,0 +1,92 @@
+name: Bug report
+description: Something is not working as it should
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make PanYa better. Please fill in the fields below.
+
+        A wrong verdict is a tracking-trust event - especially a line shown as
+        "on track" when the purchase plan is actually behind, or a quarter that
+        counts the wrong months. If that is what you hit, say so up front.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A short, clear description of the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select fiscal year / quarter ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the error message shown in the app, if any.
+    validations:
+      required: true
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: Verdict shown
+      description: If the bug involves a drug line, which status did PanYa display?
+      options:
+        - On track
+        - Watch
+        - Behind
+        - Over
+        - Unplanned
+        - No data
+        - Not applicable
+    validations:
+      required: false
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: PanYa version
+      description: From the GitHub release or installer you used.
+      placeholder: "e.g. 0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: invs
+    attributes:
+      label: INVS / SQL Server version
+      description: If known - INVS schema drifts between sites and versions, and some PanYa queries still carry unverified assumptions about the BUYPLAN tables.
+      placeholder: "e.g. SQL Server 2019, INVS 2.x"
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or extra context
+      description: Paste relevant logs. Never paste connection credentials (server, user, password) or patient data - PanYa logs timings and error types only, never secrets.
+      render: text
+    validations:
+      required: false

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Development guide
+    url: https://github.com/suradet-ps/panya/blob/main/AGENTS.md
+    about: Hard rules (read-only INVS, no credentials in logs), architecture, and conventions
+  - name: Design & tracking rules
+    url: https://github.com/suradet-ps/panya/blob/main/DESIGN.md
+    about: Product design, tracking/status rules, and the visual design system
